@@ -21,6 +21,7 @@ describe("TokenManaging smart contract", () => {
             sk,
             "nombre",
             "no se",
+            BigInt(1),
             pk,
         );
 

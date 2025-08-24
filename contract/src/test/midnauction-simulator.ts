@@ -22,6 +22,7 @@ export class MidnauctionSimulator {
     secretKey: Uint8Array, 
     producto: string,
     descripcion: string,
+    rounds: bigint,
     publicKey: Uint8Array,
   ) {
     this.contract = new Contract<MidnauctionPrivateState>(witnesses);
@@ -31,7 +32,7 @@ export class MidnauctionSimulator {
       currentZswapLocalState,
     } = this.contract.initialState(
       constructorContext({ secretKey }, "0".repeat(64)), 
-      producto, descripcion, publicKey,
+      producto, descripcion, rounds, publicKey,
     );
     this.circuitContext = {
       currentPrivateState,

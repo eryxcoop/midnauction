@@ -6,11 +6,11 @@ export enum PHASE { commitment, revealing, finished };
 
 export ledger productName: Opaque<"string">;
 export ledger productDescription: Opaque<"string">;
-//export ledger rounds: Uint<64>;
-//export ledger currentRound: Uint<64>;
+export ledger rounds: Uint<64>;
+export ledger currentRound: Counter;
 export ledger auctioneerPK: Bytes<32>;
 //export ledger maxParticipantCount: Uint<64>;
-//export ledger registeredParticipants: Set<Bytes<32>>;
+export ledger registeredParticipants: Set<Bytes<32>>;
 export ledger lastRoundSecretBids: Set<[Bytes<32>, Bytes<32>]>; // (CommitDelValor, CommitDeIdentidad) 
 export ledger lastRoundRevealedBids: Set<Uint<64>>; // valor revelado  
 export ledger phase: PHASE;
@@ -21,15 +21,15 @@ witness secretKey(): Bytes<32>;
 constructor(
     productName_: Opaque<"string">, 
     productDescription_: Opaque<"string">,
-    //rounds_: Uint<64>,
+    rounds_: Uint<64>,
     auctioneerPK_: Bytes<32>,
 ) {
     productName = disclose(productName_);
     productDescription = disclose(productDescription_);
-    //rounds = rounds_;
-    //currentRound = 1;
+    rounds = disclose(rounds_);
+    currentRound.increment(1); // We want to initialize the round counter in 1
     auctioneerPK = disclose(auctioneerPK_);
-    //registeredParticipants = default<Set<Bytes<32>>>;
+    registeredParticipants.resetToDefault(); // = default<Set<Bytes<32>>>;
     lastRoundSecretBids.resetToDefault();// = default<Set<[Bytes<32>, Bytes<32>]>>;
     lastRoundRevealedBids.resetToDefault();// = default<Set<Bytes<32>>>;
     phase = PHASE.commitment;
@@ -39,7 +39,11 @@ constructor(
 export circuit commitSecretBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>): []{
     assert(phase == PHASE.commitment, "Wrong phase to do that");
     const bidCommit = persistentCommit<Uint<64>>(value, bidNonce);
-    const identityCommit = persistentCommit<Bytes<32>>(secretKey(), idNonce);
+    const identityCommit = disclose(persistentCommit<Bytes<32>>(secretKey(), idNonce));
+    if (currentRound.read() == 1) {
+        registeredParticipants.insert(identityCommit);
+    }
+    assert(registeredParticipants.member(identityCommit), "You are not registered as participant");
     lastRoundSecretBids.insert(disclose([bidCommit, identityCommit]));
 }
 
@@ -52,19 +56,27 @@ export circuit moveToRevealPhase(): [] {
 export circuit revealBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>): [] {
     assert(phase == PHASE.revealing, "Wrong phase to do that");
     const bidCommit = persistentCommit<Uint<64>>(value, bidNonce);
-    const identityCommit = persistentCommit<Bytes<32>>(secretKey(), idNonce);
+    const identityCommit = disclose(persistentCommit<Bytes<32>>(secretKey(), idNonce));
+    assert(registeredParticipants.member(identityCommit), "You are not registered as a participant");
     assert(lastRoundSecretBids.member(disclose([bidCommit, identityCommit])), "That bid is a lie");
     lastRoundRevealedBids.insert(disclose(value));
 }
 
-//export circuit moveToNextPhase(): [] {
+export circuit moveToNextPhase(): [] {
     // Ownable_assertOnlyOwner();
-    //assert(phase == PHASE.revealing, "Wrong phase to do that");
-//}
+    assert(phase == PHASE.revealing, "Wrong phase to do that");
+    assert(currentRound.read() != rounds, "This is the last round");
+    lastRoundRevealedBids.resetToDefault();
+    lastRoundSecretBids.resetToDefault();
+    phase = PHASE.commitment;
+    currentRound.increment(1);
+}
 
 export circuit claimWin(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>, encryptedPublicKey: Bytes<32>): [] {
+    assert(phase == PHASE.revealing, "Bids are not revealed yet");
+    assert(currentRound.read() == rounds, "There are still missing rounds")
     const bidCommit = persistentCommit<Uint<64>>(value, bidNonce);
-    const identityCommit = persistentCommit<Bytes<32>>(secretKey(), idNonce);
+    const identityCommit = disclose(persistentCommit<Bytes<32>>(secretKey(), idNonce));
     assert(lastRoundSecretBids.member(disclose([bidCommit, identityCommit])), "That bid is a lie");
     winnerEncryptedPublicKey = disclose(encryptedPublicKey);
 }
