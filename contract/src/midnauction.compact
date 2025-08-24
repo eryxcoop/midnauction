@@ -31,7 +31,7 @@ constructor(
     auctioneerPK = disclose(auctioneerPK_);
     registeredParticipants.resetToDefault(); // = default<Set<Bytes<32>>>;
     secretBids.resetToDefault();// = default<Set<[Bytes<32>, Bytes<32>]>>;
-    revealedBids.resetToDefault();// = default<Set<Bytes<32>>>;
+    revealedBids.resetToDefault();
     phase = PHASE.commitment;
     //Ownable_initialize(left<ZswapCoinPublicKey, ContractAddress>(auctioneerPK));
 }
@@ -73,7 +73,7 @@ export circuit moveToNextPhase(): [] {
 }
 
 export circuit claimWin(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>, encryptedPublicKey: Bytes<32>): [] {
-    assert(phase == PHASE.revealing, "Bids are not revealed yet");
+    assert(phase == PHASE.finished, "The bid is ongoing");
     assert(currentRound.read() == rounds, "There are still missing rounds");
     const bidCommit = persistentCommit<Uint<64>>(value, bidNonce);
     const identityCommit = disclose(persistentCommit<Bytes<32>>(secretKey(), idNonce));
