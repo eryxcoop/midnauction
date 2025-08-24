@@ -1,20 +1,20 @@
-// Tipos de datos para el sistema de subastas Midnauction
+// Data types for the Midnauction auction system
 
 export interface AuctionData {
-  // Datos públicos de la subasta
+  // Public auction data
   productName: string;
   productDescription: string;
   minimumBidValue: number;
   auctioneerPublicKey: string;
   currentRound: AuctionRound;
-  totalBids: number; // Número total de ofertas realizadas (= participantes)
-  revealedBids: RevealedBid[]; // Valores revelados de la gente que ya reveló
+  totalBids: number; // Total number of bids submitted (= participants)
+  revealedBids: RevealedBid[]; // Revealed bid values from people who already revealed
 }
 
 export enum AuctionRound {
-  BIDDING = 'bidding', // Ronda de ofertas privadas - los usuarios se unen ofertando
-  REVEALING = 'revealing', // Ronda de revelación
-  FINISHED = 'finished' // Subasta terminada
+  BIDDING = 'bidding', // Private bidding round - users join by bidding
+  REVEALING = 'revealing', // Revelation round
+  FINISHED = 'finished' // Auction finished
 }
 
 export interface RevealedBid {

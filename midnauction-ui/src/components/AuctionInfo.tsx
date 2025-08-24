@@ -44,13 +44,13 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
   const getRoundLabel = (round: AuctionRound) => {
     switch (round) {
       case AuctionRound.BIDDING:
-        return 'Ronda de Ofertas';
+        return 'Bidding Round';
       case AuctionRound.REVEALING:
-        return 'Ronda de Revelación';
+        return 'Revelation Round';
       case AuctionRound.FINISHED:
-        return 'Subasta Finalizada';
-      default:
-        return 'Desconocido';
+        return 'Auction Finished';
+              default:
+          return 'Unknown';
     }
   };
 
@@ -96,7 +96,7 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
                 <Box display="flex" alignItems="center" mb={1}>
                   <Person sx={{ mr: 1, color: 'info.main' }} />
                   <Typography variant="body2" color="text.secondary">
-                    Martillero: {auction.auctioneerPublicKey.substring(0, 10)}...
+                    Auctioneer: {auction.auctioneerPublicKey.substring(0, 10)}...
                   </Typography>
                 </Box>
               </Grid>
@@ -105,12 +105,12 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
         </Card>
       </Grid>
 
-      {/* Estado de la Subasta */}
+              {/* Auction Status */}
       <Grid item xs={12} md={4}>
         <Card>
           <CardContent>
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-              <Typography variant="h6">Estado de la Subasta</Typography>
+              <Typography variant="h6">Auction Status</Typography>
               <Chip 
                 label={getRoundLabel(auction.currentRound)}
                 color={getRoundColor(auction.currentRound)}
@@ -122,46 +122,46 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
               <Box display="flex" alignItems="center" mb={1}>
                 <Gavel sx={{ mr: 1, color: 'primary.main' }} />
                 <Typography variant="body1">
-                  Total de Ofertas: {auction.totalBids}
+                  Total Bids: {auction.totalBids}
                 </Typography>
               </Box>
               
               <Box display="flex" alignItems="center">
                 <Visibility sx={{ mr: 1, color: 'success.main' }} />
                 <Typography variant="body1">
-                  Ofertas Reveladas: {auction.revealedBids.length}
+                  Revealed Bids: {auction.revealedBids.length}
                 </Typography>
               </Box>
             </Box>
 
             {auction.currentRound === AuctionRound.BIDDING && (
               <Typography variant="body2" color="primary.main">
-                Los participantes pueden unirse enviando ofertas privadas.
+                Participants can join by submitting private bids.
               </Typography>
             )}
 
             {auction.currentRound === AuctionRound.REVEALING && (
               <Typography variant="body2" color="warning.main">
-                El martillero está revelando las ofertas automáticamente.
+                The auctioneer is revealing bids automatically.
               </Typography>
             )}
 
             {auction.currentRound === AuctionRound.FINISHED && (
               <Typography variant="body2" color="success.main">
-                La subasta ha finalizado. Puedes ver los resultados finales.
+                The auction has finished. You can see the final results.
               </Typography>
             )}
           </CardContent>
         </Card>
       </Grid>
 
-      {/* Ofertas Reveladas */}
+      {/* Revealed Bids */}
       {auction.revealedBids.length > 0 && (
         <Grid item xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" mb={2}>
-                Ofertas Reveladas ({auction.revealedBids.length})
+                Revealed Bids ({auction.revealedBids.length})
               </Typography>
               
               <List>
@@ -183,7 +183,7 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
                             {formatCurrency(bid.bidAmount)}
                             {index === 0 && (
                               <Chip 
-                                label="Ganando" 
+                                label="Winning" 
                                 size="small" 
                                 color="success" 
                                 sx={{ ml: 1 }}
@@ -191,7 +191,7 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
                             )}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            Participante: {bid.participantId}
+                            Participant: {bid.participantId}
                           </Typography>
                         </Box>
                         <Typography variant="body2" color="text.secondary">

@@ -5,9 +5,10 @@ import { Gavel } from '@mui/icons-material';
 interface HeaderProps {
   isParticipant: boolean;
   currentRound: string;
+  userRole?: 'participant' | 'auctioneer';
 }
 
-export function Header({ isParticipant, currentRound }: HeaderProps) {
+export function Header({ isParticipant, currentRound, userRole }: HeaderProps) {
   return (
     <AppBar position="static" elevation={0}>
       <Toolbar>
@@ -17,17 +18,21 @@ export function Header({ isParticipant, currentRound }: HeaderProps) {
             Midnauction
           </Typography>
           <Typography variant="subtitle2" sx={{ ml: 2, opacity: 0.8 }}>
-            Sistema de Subastas Privadas
+            Private Auction System
           </Typography>
         </Box>
         
-        {isParticipant ? (
+        {userRole === 'auctioneer' ? (
+          <Typography variant="body2" color="warning.main">
+            🔨 Auctioneer Panel
+          </Typography>
+        ) : isParticipant ? (
           <Typography variant="body2" color="success.main">
-            ✓ Participando en la subasta
+            ✓ Participating in auction
           </Typography>
         ) : (
           <Typography variant="body2" color="info.main">
-            Envía una oferta para unirte
+            Submit a bid to join
           </Typography>
         )}
       </Toolbar>

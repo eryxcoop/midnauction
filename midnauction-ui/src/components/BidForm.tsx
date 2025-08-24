@@ -96,18 +96,18 @@ export function BidForm({
     <Card>
       <CardContent>
         <Typography variant="h6" mb={3}>
-          Participación en la Subasta
+          Auction Participation
         </Typography>
 
         <Stepper activeStep={getActiveStep()} sx={{ mb: 3 }}>
           <Step>
-            <StepLabel>Enviar Oferta Privada</StepLabel>
+            <StepLabel>Submit Private Bid</StepLabel>
           </Step>
           <Step>
-            <StepLabel>Revelar Oferta</StepLabel>
+            <StepLabel>Reveal Bid</StepLabel>
           </Step>
           <Step>
-            <StepLabel>Resultados</StepLabel>
+            <StepLabel>Results</StepLabel>
           </Step>
         </Stepper>
 
@@ -117,26 +117,26 @@ export function BidForm({
           </Alert>
         )}
 
-        {/* Fase de Ofertas Privadas */}
+        {/* Private Bidding Phase */}
         {currentRound === AuctionRound.BIDDING && (
           <Box>
             {canSubmitBid && !hasSubmittedBid && (
               <Box>
                 <Typography variant="body1" mb={2}>
                   {!isParticipant 
-                    ? "Ingrese su oferta para unirse a la subasta. Solo usted conocerá el monto hasta la fase de revelación."
-                    : "Ingrese su oferta privada. Solo usted conocerá el monto hasta la fase de revelación."
+                    ? "Enter your bid to join the auction. Only you will know the amount until the revelation phase."
+                    : "Enter your private bid. Only you will know the amount until the revelation phase."
                   }
                 </Typography>
                 
                 <TextField
                   fullWidth
-                  label="Monto de la Oferta"
+                  label="Bid Amount"
                   type="number"
                   value={bidAmount}
                   onChange={handleBidChange}
                   error={!!bidError}
-                  helperText={bidError || `Mínimo: ${formatCurrency(minimumBidValue)}`}
+                  helperText={bidError || `Minimum: ${formatCurrency(minimumBidValue)}`}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -156,8 +156,8 @@ export function BidForm({
                   size="large"
                 >
                   {loading 
-                    ? 'Enviando Oferta...' 
-                    : (!isParticipant ? 'Unirse con Oferta' : 'Enviar Oferta Privada')
+                    ? 'Submitting Bid...' 
+                    : (!isParticipant ? 'Join with Bid' : 'Submit Private Bid')
                   }
                 </Button>
               </Box>
@@ -165,44 +165,44 @@ export function BidForm({
 
             {hasSubmittedBid && (
               <Alert severity="success" icon={<Lock />}>
-                ✓ Tu oferta privada ha sido enviada correctamente. 
-                Espera a que comience la fase de revelación.
+                ✓ Your private bid has been submitted successfully. 
+                Wait for the revelation phase to begin.
               </Alert>
             )}
 
             {!canSubmitBid && !hasSubmittedBid && (
               <Alert severity="warning">
-                El período de ofertas ha terminado. Ya no se pueden enviar nuevas ofertas.
+                The bidding period has ended. No new bids can be submitted.
               </Alert>
             )}
           </Box>
         )}
 
-        {/* Fase de Revelación */}
+        {/* Revelation Phase */}
         {currentRound === AuctionRound.REVEALING && (
           <Box>
             {hasSubmittedBid ? (
               <Alert severity="info">
                 <Typography variant="body1" mb={1}>
-                  <strong>Fase de Revelación en Progreso</strong>
+                  <strong>Revelation Phase in Progress</strong>
                 </Typography>
                 <Typography variant="body2">
-                  El martillero está revelando las ofertas automáticamente. 
-                  Tu oferta será revelada cuando el martillero lo decida.
+                                  The auctioneer is revealing bids automatically.
+                Your bid will be revealed when the auctioneer decides.
                 </Typography>
               </Alert>
             ) : (
               <Alert severity="warning">
-                No participaste en esta subasta. La fase de ofertas ya terminó.
+                You did not participate in this auction. The bidding phase has already ended.
               </Alert>
             )}
           </Box>
         )}
 
-        {/* Subasta Finalizada */}
+        {/* Auction Finished */}
         {currentRound === AuctionRound.FINISHED && (
           <Alert severity="success">
-            🎉 La subasta ha finalizado. Puedes ver los resultados finales arriba.
+                          🎉 The auction has finished. You can see the final results above.
           </Alert>
         )}
       </CardContent>
