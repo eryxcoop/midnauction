@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["vite:cjs-external-facade:@midnight-ntwrk/onchain-runtime"],
+  "sourcesContent": ["import * as m from \"vite-cjs-external-facade:@midnight-ntwrk/onchain-runtime\";module.exports = { ...m };"],
+  "mappings": ";;;;;AAAA,YAAY,OAAO;AAAnB;AAAA;AAA8E,WAAO,UAAU,EAAE,GAAG,EAAE;AAAA;AAAA;",
+  "names": []
+}

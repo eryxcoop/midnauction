@@ -161,14 +161,39 @@ export class MidnauctionAPI implements DeployedMidnauctionAPI {
     }
 
 
-  static async deploy(providers: MidnauctionProviders, logger?: Logger): Promise<MidnauctionAPI> {
-    logger?.info('deployContract');
+  static async deploy(
+    providers: MidnauctionProviders, 
+    productName: string,
+    productDescription: string,
+    rounds: bigint,
+    logger?: Logger
+  ): Promise<MidnauctionAPI> {
+    logger?.info('deployContract', { productName, productDescription, rounds });
 
-    // EXERCISE 5: FILL IN THE CORRECT ARGUMENTS TO deployContract
+    // Get the auctioneer public key from the wallet
+    const auctioneerPK = providers.walletProvider.coinPublicKey;
+    
+    logger?.info('Deployment parameters', {
+      productName,
+      productDescription,
+      rounds,
+      auctioneerPK: Array.from(auctioneerPK).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 20) + '...'
+    });
+
+    // For deployment, always create a fresh private state to avoid address conflicts
+    const freshPrivateState = createMidnauctionPrivateState(utils.randomBytes(32));
+    
     const deployedMidnauctionContract = await deployContract<typeof midnauctionContractInstance>(providers, {
       privateStateId: midnauctionPrivateStateKey,
       contract: midnauctionContractInstance,
-      initialPrivateState: await MidnauctionAPI.getPrivateState(providers),
+      initialPrivateState: freshPrivateState,
+      initialState: (context) => midnauctionContractInstance.initialState(
+        context,
+        productName,
+        productDescription,
+        rounds,
+        auctioneerPK
+      ),
     });
 
     logger?.trace({
@@ -187,7 +212,7 @@ export class MidnauctionAPI implements DeployedMidnauctionAPI {
       },
     });
 
-    const deployedRPSContract = await findDeployedContract<MidnauctionContract>(providers, {
+    const deployedMidnauctionContract = await findDeployedContract<MidnauctionContract>(providers, {
       contractAddress,
       contract: midnauctionContractInstance,
       privateStateId: midnauctionPrivateStateKey,
@@ -196,16 +221,22 @@ export class MidnauctionAPI implements DeployedMidnauctionAPI {
 
     logger?.trace({
       contractJoined: {
-        finalizedDeployTxData: deployedRPSContract.deployTxData.public,
+        finalizedDeployTxData: deployedMidnauctionContract.deployTxData.public,
       },
     });
 
-    return new MidnauctionAPI(deployedRPSContract, providers, logger);
+    return new MidnauctionAPI(deployedMidnauctionContract, providers, logger);
   }
 
   private static async getPrivateState(providers: MidnauctionProviders): Promise<MidnauctionPrivateState> {
     const existingPrivateState = await providers.privateStateProvider.get(midnauctionPrivateStateKey);
-    return existingPrivateState ?? createMidnauctionPrivateState(utils.randomBytes(32));
+    if (existingPrivateState) {
+      console.log('Using existing private state');
+      return existingPrivateState;
+    } else {
+      console.log('Creating new private state');
+      return createMidnauctionPrivateState(utils.randomBytes(32));
+    }
   }
 }
 
