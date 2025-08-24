@@ -63,7 +63,7 @@ export circuit revealBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32
 }
 
 export circuit moveToNextPhase(): [] {
-    // Ownable_assertOnlyOwner();
+    Ownable_assertOnlyOwner();
     assert(phase == PHASE.revealing, "Wrong phase to do that");
     assert(currentRound.read() != rounds, "This is the last round");
     lastRoundRevealedBids.resetToDefault();
@@ -79,5 +79,11 @@ export circuit claimWin(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>
     const identityCommit = disclose(persistentCommit<Bytes<32>>(secretKey(), idNonce));
     assert(lastRoundSecretBids.member(disclose([bidCommit, identityCommit])), "That bid is a lie");
     winnerEncryptedPublicKey = disclose(encryptedPublicKey);
-    // phase = PHASE.finished; // si un caradura reclama que gano sin haber ganado, el estado pasa a ser finished y entonces el verdadero ganador no podria reclamar el premio. Ojo con esto
+}
+
+export circuit finishAuction(): [] {
+    Ownable_assertOnlyOwner();
+    assert(phase == PHASE.revealing, "Bids are not revealed yet");
+    assert(currentRound.read() == rounds, "There are still missing rounds");
+    phase = PHASE.finished;
 }
