@@ -1,0 +1,77 @@
+pragma language_version 0.17;
+import CompactStandardLibrary;
+//import "./node_modules/@openzeppelin-compact/contracts/src/access/AccessControl" prefix AccessControl_;
+
+export enum PHASE { commitment, revealing, finished };
+
+export ledger productName: Opaque<"string">;
+export ledger productDescription: Opaque<"string">;
+//export ledger rounds: Uint<64>;
+//export ledger currentRound: Uint<64>;
+export ledger auctioneerPK: Bytes<32>;
+//export ledger maxParticipantCount: Uint<64>;
+//export ledger registeredParticipants: Set<Bytes<32>>;
+export ledger lastRoundSecretBids: Set<[Bytes<32>, Bytes<32>]>; // (CommitDelValor, CommitDeIdentidad) 
+export ledger lastRoundRevealedBids: Set<Uint<64>>; // valor revelado  
+export ledger phase: PHASE;
+export ledger winnerEncryptedPublicKey: Bytes<32>;
+
+witness secretKey(): Bytes<32>;
+
+constructor(
+    productName_: Opaque<"string">, 
+    productDescription_: Opaque<"string">,
+    //rounds_: Uint<64>,
+    auctioneerPK_: Bytes<32>,
+    
+) {
+    productName = productName_;
+    productDescription = productDescription_;
+    //rounds = rounds_;
+    //currentRound = 1;
+    auctioneerPK = auctioneerPK_;
+    //registeredParticipants = default<Set<Bytes<32>>>;
+    lastRoundSecretBids.resetToDefault();// = default<Set<[Bytes<32>, Bytes<32>]>>;
+    lastRoundRevealedBids.resetToDefault();// = default<Set<Bytes<32>>>;
+    phase = PHASE.commitment;
+}
+
+export circuit commitSecretBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>): []{
+    assert(phase == PHASE.commitment, "Wrong phase to do that");
+    const bidCommit = persistentCommit(value, bidNonce);
+    const identityCommit = persistentCommit(secretKey(), idNonce);
+    lastRoundSecretBids.push([bidCommit, identityCommit]);
+}
+
+export circuit moveToRevealPhase(): [] {
+    // assertOnlyOwner
+    assert(phase == PHASE.commitment, "Wrong phase to do that");
+    phase = PHASE.revealing;
+}
+
+export circuit revealBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>): [] {
+    assert(phase == PHASE.revealing, "Wrong phase to do that");
+    const bidCommit = persistentCommit(value, bidNonce);
+    const identityCommit = persistentCommit(secretKey(), idNonce);
+    assert(lastRoundSecretBids.member([bidCommit, identityCommit]), "That bid is a lie");
+    lastRoundRevealedBids.push(value);
+}
+
+//export circuit moveToNextPhase(): [] {
+    // assertOnlyOwner
+    //assert(phase == PHASE.revealing, "Wrong phase to do that");
+//}
+
+export circuit claimWin(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>, encryptedPublicKey: Bytes<32>): [] {
+    const bidCommit = persistentCommit(value, bidNonce);
+    const identityCommit = persistentCommit(secretKey(), idNonce);
+    assert(lastRoundSecretBids.member([bidCommit, identityCommit]), "That bid is a lie");
+    const maxValue = 0;
+    for (const bid of lastRoundRevealedBids) {
+        if (bid > maxValue) {
+            maxValue = bid;
+        }
+    } 
+    assert(maxValue == value, "You didn't actually win");
+    winnerEncryptedPublicKey = encryptedPublicKey;
+}
