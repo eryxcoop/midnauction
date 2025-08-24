@@ -2,6 +2,7 @@
 
 import { Ledger } from "./managed/midnauction/contract/index.cjs";
 import { WitnessContext } from "@midnight-ntwrk/compact-runtime";
+import type { AuctionBid } from "../../auction-api/src/common-types";
 
 /* **********************************************************************
  * The only hidden state needed by the bulletin board contract is
@@ -10,12 +11,10 @@ import { WitnessContext } from "@midnight-ntwrk/compact-runtime";
  * private state, so we define a type for it and a function to
  * make an object of that type.
  */
-
 export type MidnauctionPrivateState = {
   readonly participantSecretKey: Uint8Array;
-
-
-  nonces: new Map(),
+  readonly myBids: AuctionBid[];
+  nonces: Map<string, Uint8Array>;
 };
 
 export const createMidauctionPrivateState = (secretKey: Uint8Array) => ({
@@ -27,5 +26,5 @@ export const createMidauctionPrivateState = (secretKey: Uint8Array) => ({
 export const witnesses = {
   secretKey: ({ privateState }: WitnessContext<Ledger, MidnauctionPrivateState>)
   : 
-  [ MidnauctionPrivateState, Uint8Array, ] => [privateState, privateState.secretKey],
+  [ MidnauctionPrivateState, Uint8Array, ] => [privateState, privateState.participantSecretKey],
 };

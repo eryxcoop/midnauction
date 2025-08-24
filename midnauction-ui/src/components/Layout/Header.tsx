@@ -18,7 +18,7 @@ export function Header({ isParticipant, currentRound, userRole }: HeaderProps) {
             Midnauction
           </Typography>
           <Typography variant="subtitle2" sx={{ ml: 2, opacity: 0.8 }}>
-            Private Auction System
+            Private Auction System Tuki
           </Typography>
         </Box>
         

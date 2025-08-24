@@ -25,20 +25,6 @@ interface AuctionContextType {
 
 const AuctionContext = createContext<AuctionContextType | undefined>(undefined);
 
-  // Mock data for the auction
-const createMockAuctionData = (): AuctionData => ({
-  productName: "MacBook Pro M3 16\"",
-  productDescription: "Laptop MacBook Pro de 16 pulgadas con chip M3, 32GB RAM, 1TB SSD. Estado: Nuevo, sin abrir.",
-  minimumBidValue: 1500,
-  auctioneerPublicKey: "0x1234567890abcdef...",
-  currentRound: AuctionRound.BIDDING,
-  totalBids: 2,
-  revealedBids: [
-    { participantId: "user1", bidAmount: 1800, timestamp: Date.now() - 120000 },
-    { participantId: "user2", bidAmount: 1650, timestamp: Date.now() - 90000 },
-  ]
-});
-
 interface AuctionProviderProps {
   children: ReactNode;
   providers?: AuctionProviders; // Optional providers for the API
@@ -50,12 +36,9 @@ export function AuctionProvider({ children, providers }: AuctionProviderProps) {
   const [isConnected, setIsConnected] = useState(false);
   
   // UI state
-  const [auctionState, setAuctionState] = useState<AuctionState>({
-    auction: createMockAuctionData(),
-    isParticipant: false,
-    canSubmitBid: true,
-    canRevealBid: false,
-  });
+  const [auctionState, setAuctionState] = useState<AuctionState>(
+    apiStateToUIState(auctionAPI?.state$ || {} as any)
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,7 +65,7 @@ export function AuctionProvider({ children, providers }: AuctionProviderProps) {
     setLoading(true);
     setError(null);
     try {
-      // Use providers if available, otherwise the API will use internal mocks
+
       const api = await AuctionAPI.deploy(providers || {} as any);
       await api.createAuction(productName, productDescription, dollarsToCents(minimumBid));
       setAuctionAPI(api);
@@ -99,7 +82,7 @@ export function AuctionProvider({ children, providers }: AuctionProviderProps) {
     setLoading(true);
     setError(null);
     try {
-      // Use providers if available, otherwise the API will use internal mocks
+
       const api = await AuctionAPI.join(providers || {} as any, contractAddress as any);
       setAuctionAPI(api);
       setIsConnected(true);
@@ -231,26 +214,6 @@ export function AuctionProvider({ children, providers }: AuctionProviderProps) {
       await auctionAPI.finishAuction();
     } catch (err) {
       setError(`Error finishing auction: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const revealSpecificBid = async (participantId: string, bidAmount: number): Promise<void> => {
-    if (!auctionAPI) {
-      throw new Error('Not connected to an auction');
-    }
-
-    setLoading(true);
-    setError(null);
-    try {
-      // Note: The API doesn't have revealSpecificBid, so we'll simulate it
-      // In a real implementation, this would be handled by the auctioneer automatically
-      const mockNonce = new Uint8Array(32);
-      await auctionAPI.revealBid(dollarsToCents(bidAmount), mockNonce);
-    } catch (err) {
-      setError(`Error revealing bid: ${err instanceof Error ? err.message : 'Unknown error'}`);
       throw err;
     } finally {
       setLoading(false);

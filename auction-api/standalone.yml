@@ -44,6 +44,6 @@ auction:
   
 # Development settings
 development:
-  mock_contract: true
+  mock_contract: false
   auto_advance_phases: false
   debug_logging: true

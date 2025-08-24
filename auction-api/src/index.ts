@@ -7,10 +7,8 @@ import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
 import { type Logger } from 'pino';
 import {
   type DeployedAuctionContract,
-  type AuctionContract,
   type AuctionDerivedState,
   type AuctionProviders,
-  AuctionPhase,
   type AuctionPrivateState,
   auctionPrivateStateKey
 } from './common-types.js';
@@ -18,12 +16,29 @@ import * as utils from './utils/index.js';
 
 import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { combineLatest, from, type Observable, tap } from 'rxjs';
-import { MidnauctionPrivateState, createMidauctionPrivateState, witnesses } from '../../contract/src/index';
+import { createMidauctionPrivateState, witnesses } from '../../contract/src/index';
 
 import contractModule from '../../contract/dist/managed/midnauction/contract/index.cjs';
-const { Contract, ledger } = contractModule;
+const { Contract } = contractModule;
 
-const auctionContractInstance: AuctionContract = new Contract(witnesses);
+const auctionContractInstance = new Contract(witnesses);
+
+// Interface for the ledger state returned by the contract
+interface LedgerState {
+  productName: string;
+  productDescription: string;
+  minimumBidValue: bigint;
+  auctioneerPublicKey: Uint8Array;
+  currentPhase: string;
+  totalBids: bigint;
+  revealedBids: any[];
+  auctionStartTime: bigint;
+  biddingEndTime?: bigint;
+  revealingEndTime?: bigint;
+  isAuctioneer: boolean;
+  canSubmitBid: boolean;
+  canRevealBid: boolean;
+}
 
 export interface DeployedAuctionAPI {
   readonly deployedContractAddress: ContractAddress;
@@ -50,26 +65,12 @@ export class AuctionAPI implements DeployedAuctionAPI {
     _providers: AuctionProviders,
     private readonly logger?: Logger,
   ) {
-    this.deployedContractAddress = (deployedContract as any).deployTxData?.public?.contractAddress || 'mock-address';
+    this.deployedContractAddress = (deployedContract as any).deployTxData?.public?.contractAddress;
     this.state$ = combineLatest(
       [
         // Combine public (ledger) state with...
         // TODO: Replace with actual provider call when ready
-        from(Promise.resolve({
-          productName: 'Mock Product',
-          productDescription: 'Mock Description',
-          minimumBidValue: 1000n,
-          auctioneerPublicKey: new Uint8Array(32),
-          currentPhase: AuctionPhase.BIDDING,
-          totalBids: 0n,
-          revealedBids: [],
-          auctionStartTime: BigInt(Date.now()),
-          biddingEndTime: undefined,
-          revealingEndTime: undefined,
-          isAuctioneer: false,
-          canSubmitBid: true,
-          canRevealBid: false,
-        })).pipe(
+        from(this.deployedContract.queryState()).pipe(
           tap((ledgerState) =>
             logger?.trace({
               ledgerStateChanged: {
@@ -88,23 +89,24 @@ export class AuctionAPI implements DeployedAuctionAPI {
       // ...and combine them to produce the required derived state.
       (ledgerState, privateState) => {
         // TODO: This will need to be updated based on the actual contract state structure
+        const typedLedgerState = ledgerState as LedgerState;
         return {
           publicState: {
-            productName: ledgerState.productName || 'Mock Product',
-            productDescription: ledgerState.productDescription || 'Mock Description',
-            minimumBidValue: ledgerState.minimumBidValue || 1000n,
-            auctioneerPublicKey: ledgerState.auctioneerPublicKey || new Uint8Array(32),
-            currentPhase: ledgerState.currentPhase || AuctionPhase.BIDDING,
-            totalBids: ledgerState.totalBids || 0n,
-            revealedBids: ledgerState.revealedBids || [],
-            auctionStartTime: ledgerState.auctionStartTime || BigInt(Date.now()),
-            biddingEndTime: ledgerState.biddingEndTime,
-            revealingEndTime: ledgerState.revealingEndTime,
+            productName: typedLedgerState.productName,
+            productDescription: typedLedgerState.productDescription,
+            minimumBidValue: typedLedgerState.minimumBidValue,
+            auctioneerPublicKey: typedLedgerState.auctioneerPublicKey,
+            currentPhase: typedLedgerState.currentPhase,
+            totalBids: typedLedgerState.totalBids,
+            revealedBids: typedLedgerState.revealedBids,
+            auctionStartTime: typedLedgerState.auctionStartTime,
+            biddingEndTime: typedLedgerState.biddingEndTime,
+            revealingEndTime: typedLedgerState.revealingEndTime,
           },
           privateState,
-          isAuctioneer: ledgerState.isAuctioneer || false,
-          canSubmitBid: ledgerState.canSubmitBid || true,
-          canRevealBid: ledgerState.canRevealBid || false,
+          isAuctioneer: typedLedgerState.isAuctioneer,
+          canSubmitBid: typedLedgerState.canSubmitBid,
+          canRevealBid: typedLedgerState.canRevealBid,
           hasSubmittedBid: (privateState as AuctionPrivateState).myBids.length > 0,
           myCurrentBid: (privateState as AuctionPrivateState).myBids[(privateState as AuctionPrivateState).myBids.length - 1],
         } as AuctionDerivedState;
@@ -132,10 +134,7 @@ export class AuctionAPI implements DeployedAuctionAPI {
    */
   async createAuction(productName: string, productDescription: string, minimumBid: bigint): Promise<void> {
     this.logger?.info(`Creating auction: ${productName}, minimum bid: ${minimumBid}`);
-    // TODO: Replace with actual contract call
-    const txData = await (this.deployedContract as any).callTx?.createAuction?.(productName, productDescription, minimumBid) || {
-      public: { txHash: 'mock-hash', blockHeight: 0 }
-    };
+    const txData = await (this.deployedContract as any).callTx?.createAuction?.(productName, productDescription, minimumBid);
     this.logger?.trace({
       transactionAdded: {
         circuit: 'createAuction',
@@ -157,9 +156,7 @@ export class AuctionAPI implements DeployedAuctionAPI {
     const nonce = utils.randomBytes(32);
     const commitment = await utils.createBidCommitment(bidAmount, nonce);
     
-    const txData = await (this.deployedContract as any).callTx?.submitBid?.(bidAmount, commitment) || {
-      public: { txHash: 'mock-hash', blockHeight: 0 }
-    };
+    const txData = await (this.deployedContract as any).callTx?.submitBid?.(bidAmount, commitment)
     this.logger?.trace({
       transactionAdded: {
         circuit: 'submitBid',
@@ -174,9 +171,7 @@ export class AuctionAPI implements DeployedAuctionAPI {
    */
   async closeBidding(): Promise<void> {
     this.logger?.info('Closing bidding phase');
-    const txData = await (this.deployedContract as any).callTx?.closeBidding?.() || {
-      public: { txHash: 'mock-hash', blockHeight: 0 }
-    };
+    const txData = await (this.deployedContract as any).callTx?.closeBidding?.()
     this.logger?.trace({
       transactionAdded: {
         circuit: 'closeBidding',
@@ -192,6 +187,7 @@ export class AuctionAPI implements DeployedAuctionAPI {
   async startRevealing(): Promise<void> {
     this.logger?.info('Starting revealing phase');
     const txData = await (this.deployedContract as any).callTx?.startRevealing?.() || {
+      //TODO UNMOCK
       public: { txHash: 'mock-hash', blockHeight: 0 }
     };
     this.logger?.trace({
@@ -211,9 +207,7 @@ export class AuctionAPI implements DeployedAuctionAPI {
    */
   async revealBid(bidAmount: bigint, nonce: Uint8Array): Promise<void> {
     this.logger?.info(`Revealing bid: ${bidAmount}`);
-    const txData = await (this.deployedContract as any).callTx?.revealBid?.(bidAmount, nonce) || {
-      public: { txHash: 'mock-hash', blockHeight: 0 }
-    };
+    const txData = await (this.deployedContract as any).callTx?.revealBid?.(bidAmount, nonce)
     this.logger?.trace({
       transactionAdded: {
         circuit: 'revealBid',
@@ -228,9 +222,7 @@ export class AuctionAPI implements DeployedAuctionAPI {
    */
   async finishAuction(): Promise<void> {
     this.logger?.info('Finishing auction');
-    const txData = await (this.deployedContract as any).callTx?.finishAuction?.() || {
-      public: { txHash: 'mock-hash', blockHeight: 0 }
-    };
+    const txData = await (this.deployedContract as any).callTx?.finishAuction?.()
     this.logger?.trace({
       transactionAdded: {
         circuit: 'finishAuction',
@@ -261,7 +253,7 @@ export class AuctionAPI implements DeployedAuctionAPI {
     logger?.info('Deploying auction contract');
 
     const initialPrivateState = await AuctionAPI.getPrivateState(providers)
-    const deployedAuctionContract: DeployedAuctionContract = await deployContract(
+    const deployedAuctionContract: DeployedAuctionContract = await (deployContract as any)(
       providers, auctionPrivateStateKey, initialPrivateState, auctionContractInstance
     );
 
@@ -284,33 +276,18 @@ export class AuctionAPI implements DeployedAuctionAPI {
       },
     });
 
-    // TODO: Replace with actual findDeployedContract call once contract is ready
-    // For now, return a mock deployed contract
-    const mockDeployedContract = {
-      deployTxData: {
-        public: {
-          contractAddress,
-          txHash: 'mock-tx-hash',
-          blockHeight: 0,
-        }
-      },
-      callTx: {
-        createAuction: async () => ({ public: { txHash: 'mock-hash', blockHeight: 0 } }),
-        submitBid: async () => ({ public: { txHash: 'mock-hash', blockHeight: 0 } }),
-        closeBidding: async () => ({ public: { txHash: 'mock-hash', blockHeight: 0 } }),
-        startRevealing: async () => ({ public: { txHash: 'mock-hash', blockHeight: 0 } }),
-        revealBid: async () => ({ public: { txHash: 'mock-hash', blockHeight: 0 } }),
-        finishAuction: async () => ({ public: { txHash: 'mock-hash', blockHeight: 0 } }),
-      }
-    };
+    const initialPrivateState = await AuctionAPI.getPrivateState(providers)
+    const deployedAuctionContract: DeployedAuctionContract = await (findDeployedContract as any)(
+      providers, contractAddress, auctionContractInstance, {privateStateKey: auctionPrivateStateKey, initialPrivateState}, 
+    );
 
     logger?.trace({
       contractJoined: {
-        finalizedDeployTxData: mockDeployedContract.deployTxData.public,
+        finalizedDeployTxData: deployedAuctionContract.deployTxData.public,
       },
     });
 
-    return new AuctionAPI(mockDeployedContract as any, providers, logger);
+    return new AuctionAPI(deployedAuctionContract, providers, logger);
   }
 
   private static async getPrivateState(providers: AuctionProviders): Promise<AuctionPrivateState> {

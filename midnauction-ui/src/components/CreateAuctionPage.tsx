@@ -61,7 +61,7 @@ export function CreateAuctionPage() {
         minBid
       );
       
-      // Generate a mock contract address for navigation
+      //TODO UNMOCK
       const contractAddress = `0x${Math.random().toString(16).substring(2, 42)}`;
       
       // Navigate to auction page as auctioneer

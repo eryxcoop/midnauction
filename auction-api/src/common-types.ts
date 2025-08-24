@@ -1,8 +1,8 @@
 // Midnauction auction common types and abstractions.
 
 import { type MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
-import {Contract, Witnesses} from '../../contract/src/index';
-import {StateWithZswap} from '@midnight-ntwrk/compact-runtime';
+import { Contract, Witnesses } from '../../contract/src/index';
+import { type StateWithZswap } from '@midnight-ntwrk/midnight-js-contracts';
 
 
 // TODO: These types will need to be imported from the actual contract once it's created
@@ -77,7 +77,9 @@ export type AuctionProviders = MidnightProviders<AuctionCircuitKeys, PrivateStat
 /**
  * A {@link AuctionContract} that has been deployed to the network.
  */
-export type DeployedAuctionContract = any; // TODO: Replace with actual deployed contract type
+//export type DeployedAuctionContract = DeployedContract<PrivateStates, 'auctionPrivateState', WHAT>;
+export type DeployedAuctionContract = any;
+
 
 /**
  * Public auction state - visible to all participants
