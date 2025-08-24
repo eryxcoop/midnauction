@@ -38,6 +38,7 @@ import {
 import { type CoinInfo, Transaction, type TransactionId } from '@midnight-ntwrk/ledger';
 import { Transaction as ZswapTransaction } from '@midnight-ntwrk/zswap';
 import { getLedgerNetworkId, getZswapNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
+import semver from 'semver'
 
 /**
  * Represents the deployment state of an auction.
@@ -71,7 +72,6 @@ export class BrowserDeployedAuctionManager implements DeployedAuctionAPIProvider
   }
 
   resolve(contractAddress?: ContractAddress): Observable<AuctionDeployment> {
-    debugger
     const deployment = new BehaviorSubject<AuctionDeployment>({ tag: 'undeployed' });
 
     this.#auctionDeployments.push(deployment);
@@ -106,7 +106,6 @@ export class BrowserDeployedAuctionManager implements DeployedAuctionAPIProvider
     try {
       deployment.next({ tag: 'deploying' });
       const providers = await this.getProviders();
-      debugger
       const api = await AuctionAPI.deploy(providers, this.logger);
       deployment.next({ tag: 'deployed', api });
     } catch (error) {
@@ -138,6 +137,7 @@ export class BrowserDeployedAuctionManager implements DeployedAuctionAPIProvider
 /** @internal */
 const initializeProviders = async (logger: Logger): Promise<AuctionProviders> => {
   const { wallet, uris } = await connectToWallet(logger);
+  console.log('********* wallet', wallet);
   const walletState = await wallet.state();
   const zkConfigPath = window.location.origin; // Path to auction contract config
 

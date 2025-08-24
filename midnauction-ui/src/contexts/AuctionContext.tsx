@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AuctionState, AuctionData, AuctionRound, PrivateBid, RevealedBid } from '../types';
-import { AuctionAPI, type AuctionProviders } from '@midnight-ntwrk/midnauction-api';
 import { apiStateToUIState, dollarsToCents } from '../types/api-adapter';
+import {AuctionAPI, AuctionProviders} from "@midnight-ntwrk/midnauction-api/src";
 
 interface AuctionContextType {
   auctionState: AuctionState;

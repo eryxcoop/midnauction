@@ -26,7 +26,7 @@ import {
   Add,
 } from '@mui/icons-material';
 import { AuctionRound } from '../types';
-import { useAuction } from '../contexts';
+import { useHybridAuction } from '../contexts/HybridAuctionContext';
 
 interface AuctioneerPanelProps {
   currentRound: AuctionRound;
@@ -49,7 +49,7 @@ export function AuctioneerPanel({
     revealSpecificBid,
     loading,
     error
-  } = useAuction();
+  } = useHybridAuction();
 
   const [revealDialogOpen, setRevealDialogOpen] = useState(false);
   const [participantId, setParticipantId] = useState('');

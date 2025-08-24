@@ -19,12 +19,24 @@ function AuctionApp() {
     auctionState, 
     submitBid, 
     refreshAuctionData,
+    joinExistingAuction,
     loading, 
     error 
   } = useHybridAuction();
 
       // If there are auction data in the state (from creation), use them
   const auctionData = location.state?.auctionData;
+
+  // Auto-join the auction when component mounts
+  React.useEffect(() => {
+    if (contractAddress && !auctionState && !loading) {
+      console.log('Auto-joining auction:', contractAddress, 'with role:', role);
+      joinExistingAuction(contractAddress, role as 'participant' | 'auctioneer')
+        .catch(err => {
+          console.error('Failed to auto-join auction:', err);
+        });
+    }
+  }, [contractAddress, role, auctionState, loading, joinExistingAuction]);
 
   const handleSubmitBid = async (amount: number) => {
     try {
@@ -59,6 +71,20 @@ function AuctionApp() {
   };
 
   const roleInfo = getRoleLabel();
+
+  // Show loading state while auction state is being initialized
+  if (!auctionState) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <div>Loading auction...</div>
+        </Box>
+      </ThemeProvider>
+    );
+  }
+
+  console.log('auctionState', auctionState);
 
   return (
             <MainLayout

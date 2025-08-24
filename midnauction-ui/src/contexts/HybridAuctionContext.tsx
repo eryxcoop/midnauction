@@ -4,7 +4,7 @@ import { type AuctionDeployment } from './BrowserDeployedAuctionManager';
 import { 
   type AuctionState, 
   type AuctionData, 
-  type AuctionPhase 
+  AuctionRound 
 } from '../types';
 
 interface HybridAuctionContextType {
@@ -12,6 +12,12 @@ interface HybridAuctionContextType {
   joinExistingAuction: (contractAddress: string, role: 'participant' | 'auctioneer') => Promise<void>;
   submitBid: (amount: number) => Promise<void>;
   refreshAuctionData: () => Promise<void>;
+  // Auctioneer functions
+  startBiddingPhase: () => Promise<void>;
+  closeBidding: () => Promise<void>;
+  startRevealingPhase: () => Promise<void>;
+  finishAuction: () => Promise<void>;
+  revealSpecificBid: (participantId: string, bidAmount: number) => Promise<void>;
   auctionState: AuctionState | null;
   loading: boolean;
   error: string | null;
@@ -166,10 +172,10 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
         if (auctionState) {
           setAuctionState({
             ...auctionState,
-            myCurrentBid: {
-              amount: amount * 100, // Convert to cents
-              nonce: new Uint8Array(32), // This would come from the API
-              commitment: new Uint8Array(32) // This would come from the API
+            currentUserBid: {
+              bidAmount: amount * 100, // Convert to cents
+              nonce: Array.from(new Uint8Array(32)).map(b => b.toString(16).padStart(2, '0')).join(''), // This would come from the API
+              commitment: Array.from(new Uint8Array(32)).map(b => b.toString(16).padStart(2, '0')).join('') // This would come from the API
             }
           });
         }
@@ -222,24 +228,28 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
           console.log('Received real auction state:', apiState);
           // Convert API state to UI state format
           setAuctionState({
-            contractAddress: currentDeployment.api.deployedContractAddress,
-            auctionData: {
+            auction: {
               productName: apiState.publicState.productName,
               productDescription: apiState.publicState.productDescription,
               minimumBidValue: Number(apiState.publicState.minimumBidValue),
-              auctioneerPublicKey: 'real-auctioneer-key'
+              auctioneerPublicKey: Array.from(apiState.publicState.auctioneerPublicKey).map(b => b.toString(16).padStart(2, '0')).join(''),
+              currentRound: apiState.publicState.currentPhase === 'bidding' ? AuctionRound.BIDDING : 
+                           apiState.publicState.currentPhase === 'revealing' ? AuctionRound.REVEALING : AuctionRound.FINISHED,
+              totalBids: Number(apiState.publicState.totalBids),
+              revealedBids: apiState.publicState.revealedBids.map(bid => ({
+                participantId: bid.participantId,
+                bidAmount: Number(bid.bidAmount),
+                timestamp: Number(bid.timestamp)
+              }))
             },
-            publicState: {
-              currentPhase: apiState.publicState.currentPhase as AuctionPhase,
-              currentRound: Number(apiState.publicState.currentRound || 1),
-              totalBids: Number(apiState.publicState.totalBids || 0),
-              revealedBids: apiState.publicState.revealedBids || []
-            },
-            userRole: 'participant',
-            myCurrentBid: apiState.myCurrentBid,
+            currentUserBid: apiState.myCurrentBid ? {
+              bidAmount: Number(apiState.myCurrentBid.bidAmount),
+              nonce: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map(b => b.toString(16).padStart(2, '0')).join(''),
+              commitment: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map(b => b.toString(16).padStart(2, '0')).join('')
+            } : undefined,
+            isParticipant: apiState.hasSubmittedBid,
             canSubmitBid: apiState.canSubmitBid,
-            canRevealBid: apiState.canRevealBid,
-            isAuctioneer: apiState.isAuctioneer
+            canRevealBid: apiState.canRevealBid
           });
         },
         error: (err) => {
@@ -249,35 +259,143 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
 
       return () => subscription.unsubscribe();
     } else if (!auctionState && !currentDeployment) {
-      // Fallback to sample state when no deployment is available
-      setAuctionState({
-        contractAddress: 'sample-address',
-        auctionData: {
-          productName: 'Sample Product',
-          productDescription: 'A sample product for testing',
-          minimumBidValue: 100000, // $1000 in cents
-          auctioneerPublicKey: 'sample-auctioneer-key'
-        },
-        publicState: {
-          currentPhase: 'BIDDING' as AuctionPhase,
-          currentRound: 1,
-          totalBids: 0,
-          revealedBids: []
-        },
-        userRole: 'participant',
-        myCurrentBid: null,
-        canSubmitBid: true,
-        canRevealBid: false,
-        isAuctioneer: false
-      });
+      // No deployment available yet, this is normal when first loading
+      console.log('No auction deployment available yet, waiting for deployment or join');
     }
   }, [currentDeployment, auctionState]);
+
+  // Auctioneer functions
+  const startBiddingPhase = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('Starting bidding phase with real providers');
+      
+      if (currentDeployment && currentDeployment.tag === 'deployed') {
+        const auctionAPI = currentDeployment.api;
+        await auctionAPI.createAuction('Product', 'Description', BigInt(1000)); // This should be the actual auction creation
+        console.log('Bidding phase started successfully');
+      } else {
+        throw new Error('No auction deployment available');
+      }
+      
+      setLoading(false);
+    } catch (err) {
+      console.error('Start bidding phase error:', err);
+      setError(err instanceof Error ? err.message : 'Error starting bidding phase');
+      setLoading(false);
+      throw err;
+    }
+  }, [currentDeployment]);
+
+  const closeBidding = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('Closing bidding phase with real providers');
+      
+      if (currentDeployment && currentDeployment.tag === 'deployed') {
+        const auctionAPI = currentDeployment.api;
+        await auctionAPI.closeBidding();
+        console.log('Bidding phase closed successfully');
+      } else {
+        throw new Error('No auction deployment available');
+      }
+      
+      setLoading(false);
+    } catch (err) {
+      console.error('Close bidding error:', err);
+      setError(err instanceof Error ? err.message : 'Error closing bidding');
+      setLoading(false);
+      throw err;
+    }
+  }, [currentDeployment]);
+
+  const startRevealingPhase = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('Starting revealing phase with real providers');
+      
+      if (currentDeployment && currentDeployment.tag === 'deployed') {
+        const auctionAPI = currentDeployment.api;
+        await auctionAPI.startRevealing();
+        console.log('Revealing phase started successfully');
+      } else {
+        throw new Error('No auction deployment available');
+      }
+      
+      setLoading(false);
+    } catch (err) {
+      console.error('Start revealing phase error:', err);
+      setError(err instanceof Error ? err.message : 'Error starting revealing phase');
+      setLoading(false);
+      throw err;
+    }
+  }, [currentDeployment]);
+
+  const finishAuction = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('Finishing auction with real providers');
+      
+      if (currentDeployment && currentDeployment.tag === 'deployed') {
+        const auctionAPI = currentDeployment.api;
+        await auctionAPI.finishAuction();
+        console.log('Auction finished successfully');
+      } else {
+        throw new Error('No auction deployment available');
+      }
+      
+      setLoading(false);
+    } catch (err) {
+      console.error('Finish auction error:', err);
+      setError(err instanceof Error ? err.message : 'Error finishing auction');
+      setLoading(false);
+      throw err;
+    }
+  }, [currentDeployment]);
+
+  const revealSpecificBid = useCallback(async (participantId: string, bidAmount: number) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('Revealing specific bid with real providers:', { participantId, bidAmount });
+      
+      if (currentDeployment && currentDeployment.tag === 'deployed') {
+        const auctionAPI = currentDeployment.api;
+        // This would need to be implemented in the contract API
+        // For now, we'll just log it
+        console.log('Bid reveal requested for participant:', participantId, 'amount:', bidAmount);
+      } else {
+        throw new Error('No auction deployment available');
+      }
+      
+      setLoading(false);
+    } catch (err) {
+      console.error('Reveal specific bid error:', err);
+      setError(err instanceof Error ? err.message : 'Error revealing bid');
+      setLoading(false);
+      throw err;
+    }
+  }, [currentDeployment]);
 
   const value: HybridAuctionContextType = {
     deployNewAuction,
     joinExistingAuction,
     submitBid,
     refreshAuctionData,
+    startBiddingPhase,
+    closeBidding,
+    startRevealingPhase,
+    finishAuction,
+    revealSpecificBid,
     auctionState,
     loading,
     error,

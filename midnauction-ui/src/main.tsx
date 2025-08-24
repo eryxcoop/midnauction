@@ -11,7 +11,7 @@ import '@midnight-ntwrk/dapp-connector-api';
 import * as pino from 'pino';
 import { DeployedAuctionProvider } from './contexts/DeployedAuctionContext';
 
-const networkId = (import.meta.env.VITE_NETWORK_ID as NetworkId) || 'testnet';
+const networkId = (import.meta.env.VITE_NETWORK_ID as NetworkId) || 'TestNet';
 
 // Ensure that the network IDs are set within the Midnight libraries.
 setNetworkId(networkId);
