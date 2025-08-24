@@ -1,11 +1,16 @@
 // Adapter types to bridge between the auction API and UI types
 
-import { 
-  AuctionDerivedState as APIAuctionState,
-  PublicAuctionState as APIPublicState,
-  AuctionPhase as APIPhase,
-  RevealedBid as APIRevealedBid
-} from '@midnight-ntwrk/midnauction-api';
+// Mock types for now since we don't have the actual auction-api package
+type APIAuctionState = any;
+type APIPublicState = any;
+type APIRevealedBid = any;
+
+// Mock enum values
+const APIPhase = {
+  BIDDING: 'bidding',
+  REVEALING: 'revealing',
+  FINISHED: 'finished'
+} as const;
 
 import { 
   AuctionState, 
@@ -18,7 +23,7 @@ import {
 /**
  * Converts API auction phase to UI auction round
  */
-export function apiPhaseToUIRound(apiPhase: APIPhase): AuctionRound {
+export function apiPhaseToUIRound(apiPhase: typeof APIPhase[keyof typeof APIPhase]): AuctionRound {
   switch (apiPhase) {
     case APIPhase.BIDDING:
       return AuctionRound.BIDDING;
@@ -34,7 +39,7 @@ export function apiPhaseToUIRound(apiPhase: APIPhase): AuctionRound {
 /**
  * Converts UI auction round to API auction phase
  */
-export function uiRoundToAPIPhase(uiRound: AuctionRound): APIPhase {
+export function uiRoundToAPIPhase(uiRound: AuctionRound): typeof APIPhase[keyof typeof APIPhase] {
   switch (uiRound) {
     case AuctionRound.BIDDING:
       return APIPhase.BIDDING;
@@ -66,8 +71,8 @@ export function apiPublicStateToUIData(apiState: APIPublicState): AuctionData {
     productName: apiState.productName,
     productDescription: apiState.productDescription,
     minimumBidValue: Number(apiState.minimumBidValue), // Convert bigint to number
-    auctioneerPublicKey: Array.from(apiState.auctioneerPublicKey).map(b => b.toString(16).padStart(2, '0')).join(''),
-    currentRound: apiPhaseToUIRound(apiState.currentPhase),
+    auctioneerPublicKey: Array.from(apiState.auctioneerPublicKey).map((b: any) => b.toString(16).padStart(2, '0')).join(''),
+    currentRound: apiPhaseToUIRound(apiState.currentPhase as any),
     totalBids: Number(apiState.totalBids), // Convert bigint to number
     revealedBids: apiState.revealedBids.map(apiRevealedBidToUI),
   };
@@ -84,8 +89,8 @@ export function apiStateToUIState(apiState: APIAuctionState): AuctionState {
   if (apiState.myCurrentBid) {
     currentUserBid = {
       bidAmount: Number(apiState.myCurrentBid.bidAmount),
-      nonce: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map((b: number) => b.toString(16).padStart(2, '0')).join(''),
-      commitment: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map((b: number) => b.toString(16).padStart(2, '0')).join(''),
+      nonce: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map((b: any) => b.toString(16).padStart(2, '0')).join(''),
+      commitment: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map((b: any) => b.toString(16).padStart(2, '0')).join(''),
     };
   }
 

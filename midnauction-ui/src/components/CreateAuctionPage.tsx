@@ -1,30 +1,20 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useHybridAuction } from '../contexts/HybridAuctionContext';
+import { useAuction } from '../contexts/AuctionContext';
 import {
-  Container,
   Box,
-  Typography,
+  Button,
   Card,
   CardContent,
   TextField,
-  Button,
-  Alert,
-  Grid,
-  InputAdornment,
-  Stepper,
-  Step,
-  StepLabel,
+  Typography,
+  Alert
 } from '@mui/material';
-import {
-  ArrowBack,
-  AttachMoney,
-  Create,
-} from '@mui/icons-material';
+import { ArrowBack } from '@mui/icons-material';
 
 export function CreateAuctionPage() {
   const navigate = useNavigate();
-  const { deployNewAuction, loading, error } = useHybridAuction();
+  const { deployNewAuction, loading, error } = useAuction();
   const [localError, setLocalError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     productName: '',
@@ -78,7 +68,7 @@ export function CreateAuctionPage() {
   const isFormValid = formData.productName && formData.productDescription && formData.minimumBidValue;
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+    <Box sx={{ mt: 4, mb: 4 }}>
       <Box mb={4}>
         <Button
           startIcon={<ArrowBack />}
@@ -96,17 +86,7 @@ export function CreateAuctionPage() {
         </Typography>
       </Box>
 
-      <Stepper activeStep={0} sx={{ mb: 4 }}>
-        <Step>
-          <StepLabel>Configure Product</StepLabel>
-        </Step>
-        <Step>
-          <StepLabel>Deploy Contract</StepLabel>
-        </Step>
-        <Step>
-          <StepLabel>Active Auction</StepLabel>
-        </Step>
-      </Stepper>
+      {/* Stepper removed as per edit hint */}
 
       <Card>
         <CardContent sx={{ p: 4 }}>
@@ -116,73 +96,62 @@ export function CreateAuctionPage() {
             </Alert>
           )}
 
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3 }}>
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Product Information
+              </Typography>
               <TextField
                 fullWidth
                 label="Product Name"
                 value={formData.productName}
                 onChange={handleInputChange('productName')}
-                placeholder="Ex: MacBook Pro M3 16&quot;"
-                variant="outlined"
                 required
+                sx={{ mb: 2 }}
               />
-            </Grid>
-
-            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Product Description"
                 value={formData.productDescription}
                 onChange={handleInputChange('productDescription')}
-                placeholder="Describe the product, its condition, features, etc."
-                variant="outlined"
                 multiline
-                rows={4}
+                rows={3}
                 required
               />
-            </Grid>
+            </Box>
 
-            <Grid item xs={12} md={6}>
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Auction Settings
+              </Typography>
               <TextField
                 fullWidth
-                label="Minimum Auction Value"
+                label="Minimum Bid (USD)"
                 type="number"
                 value={formData.minimumBidValue}
                 onChange={handleInputChange('minimumBidValue')}
-                placeholder="1500"
-                variant="outlined"
                 required
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <AttachMoney />
-                    </InputAdornment>
-                  ),
-                }}
-                helperText="Minimum price to participate in the auction"
+                inputProps={{ min: 0, step: 0.01 }}
               />
-            </Grid>
-          </Grid>
+            </Box>
 
-          <Box mt={4} display="flex" justifyContent="space-between">
-            <Button
-              variant="outlined"
-              onClick={handleBack}
-              size="large"
-            >
-              Cancel
-            </Button>
-            
-            <Button
-              variant="contained"
-              onClick={handleCreateAuction}
-              disabled={!isFormValid || loading}
-              startIcon={<Create />}
-              size="large"
-            >
-              {loading ? 'Creating Auction...' : 'Create Auction'}
-            </Button>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={handleBack}
+                fullWidth
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleCreateAuction}
+                disabled={!isFormValid || loading}
+                fullWidth
+              >
+                {loading ? 'Creating Auction...' : 'Create Auction'}
+              </Button>
+            </Box>
           </Box>
         </CardContent>
       </Card>
@@ -198,6 +167,6 @@ export function CreateAuctionPage() {
           </Typography>
         </Alert>
       </Box>
-    </Container>
+    </Box>
   );
 }

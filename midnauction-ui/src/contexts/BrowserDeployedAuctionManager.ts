@@ -1,8 +1,55 @@
-import {
-  AuctionAPI,
-  type AuctionProviders,
-  type AuctionCircuitKeys,
-} from '@midnight-ntwrk/midnauction-api';
+// Mock types for now since we don't have the actual auction-api package
+type AuctionProviders = any;
+type AuctionCircuitKeys = any;
+
+// Mock AuctionAPI class
+class AuctionAPI {
+  static async deploy(_providers: any, _logger?: any): Promise<AuctionAPI> {
+    return new AuctionAPI();
+  }
+
+  static async join(_providers: any, _contractAddress: any, _logger?: any): Promise<AuctionAPI> {
+    return new AuctionAPI();
+  }
+
+  // Add missing methods
+  state$ = {
+    subscribe: (_observer: any) => ({
+      unsubscribe: () => {}
+    })
+  };
+
+  deployedContractAddress = 'mock-address';
+
+  async submitBid(bidAmount: bigint): Promise<void> {
+    console.log('Mock: Submitting bid:', bidAmount);
+  }
+
+  async revealBid(bidAmount: bigint, nonce: Uint8Array): Promise<void> {
+    console.log('Mock: Revealing bid:', { bidAmount, nonce });
+  }
+
+  async refreshState(): Promise<void> {
+    console.log('Mock: Refreshing state');
+  }
+
+  async createAuction(productName: string, productDescription: string, minimumBid: bigint): Promise<void> {
+    console.log('Mock: Creating auction:', { productName, productDescription, minimumBid });
+  }
+
+  async closeBidding(): Promise<void> {
+    console.log('Mock: Closing bidding');
+  }
+
+  async startRevealing(): Promise<void> {
+    console.log('Mock: Starting revealing');
+  }
+
+  async finishAuction(): Promise<void> {
+    console.log('Mock: Finishing auction');
+  }
+}
+
 import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
 import {
   BehaviorSubject,

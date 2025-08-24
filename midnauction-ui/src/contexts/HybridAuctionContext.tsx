@@ -3,7 +3,6 @@ import { useDeployedAuctionContext } from '../hooks';
 import { type AuctionDeployment } from './BrowserDeployedAuctionManager';
 import { 
   type AuctionState, 
-  type AuctionData, 
   AuctionRound 
 } from '../types';
 
@@ -224,7 +223,7 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
       
       // Subscribe to the real auction state from the API
       const subscription = currentDeployment.api.state$.subscribe({
-        next: (apiState) => {
+        next: (apiState: any) => {
           console.log('Received real auction state:', apiState);
           // Convert API state to UI state format
           setAuctionState({
@@ -232,11 +231,11 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
               productName: apiState.publicState.productName,
               productDescription: apiState.publicState.productDescription,
               minimumBidValue: Number(apiState.publicState.minimumBidValue),
-              auctioneerPublicKey: Array.from(apiState.publicState.auctioneerPublicKey).map(b => b.toString(16).padStart(2, '0')).join(''),
+              auctioneerPublicKey: Array.from(apiState.publicState.auctioneerPublicKey).map((b: any) => b.toString(16).padStart(2, '0')).join(''),
               currentRound: apiState.publicState.currentPhase === 'bidding' ? AuctionRound.BIDDING : 
                            apiState.publicState.currentPhase === 'revealing' ? AuctionRound.REVEALING : AuctionRound.FINISHED,
               totalBids: Number(apiState.publicState.totalBids),
-              revealedBids: apiState.publicState.revealedBids.map(bid => ({
+              revealedBids: apiState.publicState.revealedBids.map((bid: any) => ({
                 participantId: bid.participantId,
                 bidAmount: Number(bid.bidAmount),
                 timestamp: Number(bid.timestamp)
@@ -244,16 +243,16 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
             },
             currentUserBid: apiState.myCurrentBid ? {
               bidAmount: Number(apiState.myCurrentBid.bidAmount),
-              nonce: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map(b => b.toString(16).padStart(2, '0')).join(''),
-              commitment: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map(b => b.toString(16).padStart(2, '0')).join('')
+              nonce: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map((b: any) => b.toString(16).padStart(2, '0')).join(''),
+              commitment: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map((b: any) => b.toString(16).padStart(2, '0')).join('')
             } : undefined,
             isParticipant: apiState.hasSubmittedBid,
             canSubmitBid: apiState.canSubmitBid,
             canRevealBid: apiState.canRevealBid
           });
         },
-        error: (err) => {
-          console.error('Error subscribing to auction state:', err);
+        error: (err: any) => {
+          console.error('Error in auction state stream:', err);
         }
       });
 
@@ -369,7 +368,6 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
       console.log('Revealing specific bid with real providers:', { participantId, bidAmount });
       
       if (currentDeployment && currentDeployment.tag === 'deployed') {
-        const auctionAPI = currentDeployment.api;
         // This would need to be implemented in the contract API
         // For now, we'll just log it
         console.log('Bid reveal requested for participant:', participantId, 'amount:', bidAmount);

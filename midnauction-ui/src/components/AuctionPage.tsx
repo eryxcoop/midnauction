@@ -89,7 +89,6 @@ function AuctionApp() {
   return (
             <MainLayout
           isParticipant={auctionState.isParticipant}
-          currentRound={auctionState.auction.currentRound}
           userRole={role as 'participant' | 'auctioneer'}
         >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -126,14 +125,11 @@ function AuctionApp() {
         {/* Formulario de Participación - Solo visible para participantes */}
         {role === 'participant' && (
           <BidForm
-            currentRound={auctionState.auction.currentRound}
             minimumBidValue={auctionState.auction.minimumBidValue}
             canSubmitBid={auctionState.canSubmitBid}
-            canRevealBid={auctionState.canRevealBid}
             hasSubmittedBid={!!auctionState.currentUserBid}
             isParticipant={auctionState.isParticipant}
             onSubmitBid={handleSubmitBid}
-            onRevealBid={() => Promise.resolve()}
             loading={loading}
             error={error}
           />

@@ -1,211 +1,155 @@
-import React from 'react';
-import {
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  Box,
-  Chip,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  Paper,
-} from '@mui/material';
-import {
-  Gavel,
-  People,
-  Visibility,
-  VisibilityOff,
-  AttachMoney,
-  Schedule,
-  Person,
-} from '@mui/icons-material';
-import { AuctionData, AuctionRound } from '../types';
+import { Box, Typography, Chip, Divider } from '@mui/material';
+import { AttachMoney, Timer } from '@mui/icons-material';
+import { AuctionData } from '../types';
 
 interface AuctionInfoProps {
   auction: AuctionData;
+  canSubmitBid?: boolean;
+  canRevealBid?: boolean;
+  onSubmitBid?: () => void;
+  onRevealBid?: () => void;
 }
 
-export function AuctionInfo({ auction }: AuctionInfoProps) {
-  const getRoundColor = (round: AuctionRound) => {
-    switch (round) {
-      case AuctionRound.BIDDING:
-        return 'primary';
-      case AuctionRound.REVEALING:
-        return 'warning';
-      case AuctionRound.FINISHED:
-        return 'success';
-      default:
-        return 'default';
-    }
-  };
-
-  const getRoundLabel = (round: AuctionRound) => {
-    switch (round) {
-      case AuctionRound.BIDDING:
-        return 'Bidding Round';
-      case AuctionRound.REVEALING:
-        return 'Revelation Round';
-      case AuctionRound.FINISHED:
-        return 'Auction Finished';
-              default:
-          return 'Unknown';
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  const sortedBids = [...auction.revealedBids].sort((a, b) => b.bidAmount - a.bidAmount);
+export function AuctionInfo({ 
+  auction, 
+  canSubmitBid = false, 
+  canRevealBid = false,
+  onSubmitBid,
+  onRevealBid
+}: AuctionInfoProps) {
+  // Simple time remaining display - you can enhance this
+  const timeRemaining = "Active";
 
   return (
-    <Grid container spacing={3}>
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 2 }}>
       {/* Información del Producto */}
-      <Grid item xs={12} md={8}>
-        <Card>
-          <CardContent>
-            <Box display="flex" alignItems="center" mb={2}>
-              <Gavel sx={{ mr: 1, color: 'primary.main' }} />
-              <Typography variant="h4" component="h1">
-                {auction.productName}
-              </Typography>
-            </Box>
-            
-            <Typography variant="body1" color="text.secondary" paragraph>
-              {auction.productDescription}
+      <Box>
+        <Typography variant="h6" gutterBottom>
+          Auction Details
+        </Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              Product Name
             </Typography>
+            <Typography variant="body1">{auction.productName}</Typography>
+          </Box>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              Description
+            </Typography>
+            <Typography variant="body1">{auction.productDescription}</Typography>
+          </Box>
+        </Box>
+      </Box>
 
-            <Divider sx={{ my: 2 }} />
+      <Box>
+        <Typography variant="h6" gutterBottom>
+          Current Status
+        </Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              Phase
+            </Typography>
+            <Chip 
+              label={auction.currentRound} 
+              color={auction.currentRound === 'bidding' ? 'primary' : auction.currentRound === 'revealing' ? 'warning' : 'success'}
+              size="small"
+            />
+          </Box>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              Total Bids
+            </Typography>
+            <Typography variant="body1">{auction.totalBids}</Typography>
+          </Box>
+        </Box>
+      </Box>
 
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Box display="flex" alignItems="center" mb={1}>
-                  <AttachMoney sx={{ mr: 1, color: 'success.main' }} />
-                  <Typography variant="h6">
-                    Valor Mínimo: {formatCurrency(auction.minimumBidValue)}
+      <Divider sx={{ my: 2 }} />
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            Bidding Information
+          </Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1 }}>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Minimum Bid
+              </Typography>
+              <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AttachMoney />
+                {auction.minimumBidValue}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Time Remaining
+              </Typography>
+              <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Timer />
+                {timeRemaining}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            Auctioneer
+          </Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1 }}>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Public Key
+              </Typography>
+              <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                {auction.auctioneerPublicKey}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            Actions
+          </Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1 }}>
+            {canSubmitBid && onSubmitBid && (
+              <Typography variant="body2" color="primary">
+                ✓ Can submit bid
+              </Typography>
+            )}
+            {canRevealBid && onRevealBid && (
+              <Typography variant="body2" color="secondary">
+                ✓ Can reveal bid
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      </Box>
+
+      {auction.revealedBids && auction.revealedBids.length > 0 && (
+        <>
+          <Divider sx={{ my: 2 }} />
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Revealed Bids
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1 }}>
+              {auction.revealedBids.map((bid, index) => (
+                <Box key={index} sx={{ p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                  <Typography variant="body2">
+                    Bid #{index + 1}: ${bid.bidAmount}
                   </Typography>
                 </Box>
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <Box display="flex" alignItems="center" mb={1}>
-                  <Person sx={{ mr: 1, color: 'info.main' }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Auctioneer: {auction.auctioneerPublicKey.substring(0, 10)}...
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-      </Grid>
-
-              {/* Auction Status */}
-      <Grid item xs={12} md={4}>
-        <Card>
-          <CardContent>
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-              <Typography variant="h6">Auction Status</Typography>
-              <Chip 
-                label={getRoundLabel(auction.currentRound)}
-                color={getRoundColor(auction.currentRound)}
-                icon={<Schedule />}
-              />
+              ))}
             </Box>
-
-            <Box mb={2}>
-              <Box display="flex" alignItems="center" mb={1}>
-                <Gavel sx={{ mr: 1, color: 'primary.main' }} />
-                <Typography variant="body1">
-                  Total Bids: {auction.totalBids}
-                </Typography>
-              </Box>
-              
-              <Box display="flex" alignItems="center">
-                <Visibility sx={{ mr: 1, color: 'success.main' }} />
-                <Typography variant="body1">
-                  Revealed Bids: {auction.revealedBids.length}
-                </Typography>
-              </Box>
-            </Box>
-
-            {auction.currentRound === AuctionRound.BIDDING && (
-              <Typography variant="body2" color="primary.main">
-                Participants can join by submitting private bids.
-              </Typography>
-            )}
-
-            {auction.currentRound === AuctionRound.REVEALING && (
-              <Typography variant="body2" color="warning.main">
-                The auctioneer is revealing bids automatically.
-              </Typography>
-            )}
-
-            {auction.currentRound === AuctionRound.FINISHED && (
-              <Typography variant="body2" color="success.main">
-                The auction has finished. You can see the final results.
-              </Typography>
-            )}
-          </CardContent>
-        </Card>
-      </Grid>
-
-      {/* Revealed Bids */}
-      {auction.revealedBids.length > 0 && (
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" mb={2}>
-                Revealed Bids ({auction.revealedBids.length})
-              </Typography>
-              
-              <List>
-                {sortedBids.map((bid, index) => (
-                  <ListItem key={bid.participantId} divider={index < sortedBids.length - 1}>
-                    <Paper 
-                      elevation={1} 
-                      sx={{ 
-                        p: 2, 
-                        width: '100%',
-                        backgroundColor: index === 0 ? 'success.dark' : 'background.paper',
-                        border: index === 0 ? '2px solid' : '1px solid',
-                        borderColor: index === 0 ? 'success.main' : 'divider',
-                      }}
-                    >
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Box>
-                          <Typography variant="h6" color={index === 0 ? 'success.light' : 'text.primary'}>
-                            {formatCurrency(bid.bidAmount)}
-                            {index === 0 && (
-                              <Chip 
-                                label="Winning" 
-                                size="small" 
-                                color="success" 
-                                sx={{ ml: 1 }}
-                              />
-                            )}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Participant: {bid.participantId}
-                          </Typography>
-                        </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {new Date(bid.timestamp).toLocaleTimeString()}
-                        </Typography>
-                      </Box>
-                    </Paper>
-                  </ListItem>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
-        </Grid>
+          </Box>
+        </>
       )}
-    </Grid>
+    </Box>
   );
 }

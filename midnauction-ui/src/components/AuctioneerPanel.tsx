@@ -1,30 +1,20 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
+  Box,
+  Button,
   Card,
   CardContent,
   Typography,
-  Button,
-  Box,
-  Grid,
-  Alert,
-  Divider,
   TextField,
+  Alert,
+  Chip,
+  Divider,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  Chip,
+  DialogActions
 } from '@mui/material';
-import {
-  PlayArrow,
-  Stop,
-  Visibility,
-  CheckCircle,
-  Add,
-} from '@mui/icons-material';
+import { Flag } from '@mui/icons-material';
 import { AuctionRound } from '../types';
 import { useHybridAuction } from '../contexts/HybridAuctionContext';
 
@@ -42,7 +32,6 @@ export function AuctioneerPanel({
   revealedBidsCount 
 }: AuctioneerPanelProps) {
   const {
-    startBiddingPhase,
     closeBidding,
     startRevealingPhase,
     finishAuction,
@@ -55,35 +44,27 @@ export function AuctioneerPanel({
   const [participantId, setParticipantId] = useState('');
   const [bidAmount, setBidAmount] = useState('');
 
-  const handleStartBidding = async () => {
-    try {
-      await startBiddingPhase();
-    } catch (err) {
-      console.error('Error starting bidding phase:', err);
-    }
-  };
-
   const handleCloseBidding = async () => {
     try {
       await closeBidding();
-    } catch (err) {
-      console.error('Error closing bidding:', err);
+    } catch (error) {
+      console.error('Failed to close bidding:', error);
     }
   };
 
   const handleStartRevealing = async () => {
     try {
       await startRevealingPhase();
-    } catch (err) {
-      console.error('Error starting revealing phase:', err);
+    } catch (error) {
+      console.error('Failed to start revealing:', error);
     }
   };
 
   const handleFinishAuction = async () => {
     try {
       await finishAuction();
-    } catch (err) {
-      console.error('Error finishing auction:', err);
+    } catch (error) {
+      console.error('Failed to finish auction:', error);
     }
   };
 
@@ -260,115 +241,70 @@ export function AuctioneerPanel({
             Phase Control
           </Typography>
 
-          <Grid container spacing={2}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
             {/* Bidding Round */}
-            <Grid item xs={12} md={6}>
-              <Box>
-                <Typography variant="subtitle2" gutterBottom>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
                   Bidding Phase
                 </Typography>
-                
-                {currentRound === AuctionRound.BIDDING ? (
-                  <Box>
-                    {canSubmitBid ? (
-                      <Button
-                        variant="contained"
-                        color="error"
-                        onClick={handleCloseBidding}
-                        disabled={loading}
-                        startIcon={<Stop />}
-                        fullWidth
-                      >
-                        Close Bidding
-                      </Button>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                        Bidding is closed
-                      </Typography>
-                    )}
-                  </Box>
-                ) : currentRound === AuctionRound.REVEALING || currentRound === AuctionRound.FINISHED ? (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                                          Bidding phase completed
-                  </Typography>
-                ) : (
-                  <Button
-                    variant="outlined"
-                    onClick={handleStartBidding}
-                    disabled={loading}
-                    startIcon={<PlayArrow />}
-                    fullWidth
-                  >
-                                            Start Bidding
-                  </Button>
-                )}
-              </Box>
-            </Grid>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  Current phase: {currentRound}
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleCloseBidding}
+                  disabled={currentRound !== AuctionRound.BIDDING}
+                  fullWidth
+                >
+                  Close Bidding
+                </Button>
+              </CardContent>
+            </Card>
 
             {/* Revelation Phase */}
-            <Grid item xs={12} md={6}>
-              <Box>
-                <Typography variant="subtitle2" gutterBottom>
-                  Revelation Phase
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Revealing Phase
                 </Typography>
-                
-                {currentRound === AuctionRound.BIDDING && !canSubmitBid ? (
-                  <Button
-                    variant="outlined"
-                    color="warning"
-                    onClick={handleStartRevealing}
-                    disabled={loading}
-                    startIcon={<Visibility />}
-                    fullWidth
-                  >
-                                            Start Revelation
-                  </Button>
-                ) : currentRound === AuctionRound.REVEALING ? (
-                  <Typography variant="body2" color="warning.main" sx={{ textAlign: 'center', py: 2 }}>
-                                          🔍 Revelation Phase Active
-                  </Typography>
-                ) : currentRound === AuctionRound.FINISHED ? (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                                          Revelation phase completed
-                  </Typography>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                                          You must close bidding first
-                  </Typography>
-                )}
-              </Box>
-            </Grid>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  Reveal all submitted bids
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleStartRevealing}
+                  disabled={currentRound !== AuctionRound.BIDDING}
+                  fullWidth
+                >
+                  Start Revealing
+                </Button>
+              </CardContent>
+            </Card>
 
             {/* Finish Auction */}
-            <Grid item xs={12}>
-              <Box>
-                <Typography variant="subtitle2" gutterBottom>
-                  Finish Auction
+            <Card sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Auction Results
                 </Typography>
-                
-                {currentRound === AuctionRound.REVEALING ? (
-                  <Button
-                    variant="outlined"
-                    color="success"
-                    onClick={handleFinishAuction}
-                    disabled={loading}
-                    startIcon={<CheckCircle />}
-                    fullWidth
-                  >
-                                            Finish Auction
-                  </Button>
-                ) : currentRound === AuctionRound.FINISHED ? (
-                  <Typography variant="body2" color="success.main" sx={{ textAlign: 'center', py: 2 }}>
-                                          🎉 Auction Finished
-                  </Typography>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                                          You must complete revelation first
-                  </Typography>
-                )}
-              </Box>
-            </Grid>
-          </Grid>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  View final results and determine winner
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleFinishAuction}
+                  disabled={currentRound !== AuctionRound.REVEALING}
+                  fullWidth
+                >
+                  Finish Auction
+                </Button>
+              </CardContent>
+            </Card>
+          </Box>
 
           <Divider sx={{ mt: 3, mb: 3 }} />
 
@@ -384,7 +320,7 @@ export function AuctioneerPanel({
                 color="warning"
                 onClick={() => setRevealDialogOpen(true)}
                 disabled={loading}
-                startIcon={<Add />}
+                startIcon={<Flag />}
                 fullWidth
               >
                                   Reveal Specific Bid

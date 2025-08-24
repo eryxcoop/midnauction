@@ -1,270 +1,91 @@
-import React from 'react';
+import { Box, Card, CardContent, Typography, Button } from '@mui/material';
+import { PersonAdd, Gavel, Add } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import {
-  Container,
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Button,
-  Grid,
-  Paper,
-} from '@mui/material';
-import {
-  Add,
-  PersonAdd,
-  Gavel,
-} from '@mui/icons-material';
 
 export function HomePage() {
   const navigate = useNavigate();
 
-  const handleCreateAuction = () => {
-    navigate('/create-auction');
-  };
-
-  const handleJoinAsParticipant = () => {
-    navigate('/join-participant');
-  };
-
-  const handleJoinAsAuctioneer = () => {
-    navigate('/join-auctioneer');
-  };
-
   return (
-    <Container maxWidth="lg" sx={{ mt: 8, mb: 4 }}>
+    <Box sx={{ p: 3 }}>
       <Box textAlign="center" mb={6}>
-        <Typography variant="h2" component="h1" gutterBottom>
-          Midnauction
+        <Typography variant="h3" component="h1" gutterBottom>
+          Welcome to Midnauction
         </Typography>
-        <Typography variant="h5" color="text.secondary" paragraph>
-          Private Auction System
+        <Typography variant="h6" color="text.secondary" paragraph>
+          A private, secure auction system built on Midnight Network
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto' }}>
-          Participate in secure and transparent auctions using blockchain technology.
-          Create new auctions or join existing ones as a participant or auctioneer.
+        <Typography variant="body1" color="text.secondary">
+          Participate in auctions with private bids or create your own auction
         </Typography>
       </Box>
 
-      <Grid container spacing={4} justifyContent="center" sx={{ maxWidth: '100%' }}>
-        {/* Create New Auction */}
-        <Grid item xs={12} md={4} sx={{ minWidth: 320, maxWidth: 400 }}>
-          <Card 
-            sx={{ 
-              height: 420,
-              minHeight: 420,
-              width: '100%',
-              maxWidth: 360,
-              display: 'flex', 
-              flexDirection: 'column',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: 6,
-              }
-            }}
-          >
-            <CardContent sx={{ 
-              flexGrow: 1, 
-              textAlign: 'center', 
-              p: 4,
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <Paper
-                sx={{
-                  width: 80,
-                  height: 80,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 3,
-                  backgroundColor: 'primary.main',
-                  color: 'primary.contrastText',
-                  borderRadius: 2,
-                }}
-              >
-                <Add sx={{ fontSize: 40 }} />
-              </Paper>
-              
-              <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 2 }}>
-                Create New Auction
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3 }}>
+        <Box sx={{ minWidth: 320, maxWidth: 400 }}>
+          <Card>
+            <CardContent>
+              <Typography variant="h5" component="h2" gutterBottom>
+                Join as Participant
               </Typography>
-              
-              <Typography 
-                variant="body2"
-                color="text.secondary" 
-                sx={{ 
-                  mb: 4,
-                  minHeight: 48,
-                  lineHeight: 1.5
-                }}
-              >
-                Set up a new auction with your products. Define the minimum price and manage the entire process.
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Participate in existing auctions by submitting private bids and revealing them when the time comes.
               </Typography>
-              
               <Button
                 variant="contained"
-                size="large"
-                onClick={handleCreateAuction}
+                color="primary"
+                onClick={() => navigate('/join-participant')}
                 fullWidth
-                sx={{ mt: 'auto' }}
+                startIcon={<PersonAdd />}
+              >
+                Join Auction
+              </Button>
+            </CardContent>
+          </Card>
+        </Box>
+
+        <Box sx={{ minWidth: 320, maxWidth: 400 }}>
+          <Card>
+            <CardContent>
+              <Typography variant="h5" component="h2" gutterBottom>
+                Join as Auctioneer
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Manage existing auctions, control phases, and determine winners.
+              </Typography>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={() => navigate('/join-auctioneer')}
+                fullWidth
+                startIcon={<Gavel />}
+              >
+                Join as Auctioneer
+              </Button>
+            </CardContent>
+          </Card>
+        </Box>
+
+        <Box sx={{ minWidth: 320, maxWidth: 400 }}>
+          <Card>
+            <CardContent>
+              <Typography variant="h5" component="h2" gutterBottom>
+                Create New Auction
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Start a new auction by setting up product details and minimum bid requirements.
+              </Typography>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => navigate('/create-auction')}
+                fullWidth
+                startIcon={<Add />}
               >
                 Create Auction
               </Button>
             </CardContent>
           </Card>
-        </Grid>
-
-        {/* Join as Participant */}
-        <Grid item xs={12} md={4} sx={{ minWidth: 320, maxWidth: 400 }}>
-          <Card 
-            sx={{ 
-              height: 420,
-              minHeight: 420,
-              width: '100%',
-              maxWidth: 360,
-              display: 'flex', 
-              flexDirection: 'column',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: 6,
-              }
-            }}
-          >
-            <CardContent sx={{ 
-              flexGrow: 1, 
-              textAlign: 'center', 
-              p: 4,
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <Paper
-                sx={{
-                  width: 80,
-                  height: 80,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 3,
-                  backgroundColor: 'secondary.main',
-                  color: 'secondary.contrastText',
-                  borderRadius: 2,
-                }}
-              >
-                <PersonAdd sx={{ fontSize: 40 }} />
-              </Paper>
-              
-              <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 2 }}>
-                Join as Participant
-              </Typography>
-              
-              <Typography 
-                variant="body2" 
-                color="text.secondary" 
-                sx={{ 
-                  mb: 4,
-                  minHeight: 48,
-                  lineHeight: 1.5
-                }}
-              >
-                Participate in an existing auction. Enter the contract address to submit private bids.
-              </Typography>
-              
-              <Button
-                variant="contained"
-                color="secondary"
-                size="large"
-                onClick={handleJoinAsParticipant}
-                fullWidth
-                sx={{ mt: 'auto' }}
-              >
-                Join as Participant
-              </Button>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Join as Auctioneer */}
-        <Grid item xs={12} md={4} sx={{ minWidth: 320, maxWidth: 400 }}>
-          <Card 
-            sx={{ 
-              height: 420,
-              minHeight: 420,
-              width: '100%',
-              maxWidth: 360,
-              display: 'flex', 
-              flexDirection: 'column',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: 6,
-              }
-            }}
-          >
-            <CardContent sx={{ 
-              flexGrow: 1, 
-              textAlign: 'center', 
-              p: 4,
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <Paper
-                sx={{
-                  width: 80,
-                  height: 80,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 3,
-                  backgroundColor: 'success.main',
-                  color: 'success.contrastText',
-                  borderRadius: 2,
-                }}
-              >
-                <Gavel sx={{ fontSize: 40 }} />
-              </Paper>
-              
-              <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 2 }}>
-                Access as Auctioneer
-              </Typography>
-              
-              <Typography 
-                variant="body2" 
-                color="text.secondary" 
-                sx={{ 
-                  mb: 4,
-                  minHeight: 48,
-                  lineHeight: 1.5
-                }}
-              >
-                Access an auction you created. Manage auction phases, reveal bids and control the process.
-              </Typography>
-              
-              <Button
-                variant="contained"
-                color="success"
-                size="large"
-                onClick={handleJoinAsAuctioneer}
-                fullWidth
-                sx={{ mt: 'auto' }}
-              >
-                Access as Auctioneer
-              </Button>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      <Box textAlign="center" mt={8}>
-        <Typography variant="body2" color="text.secondary">
-          Midnauction v1.0 - Decentralized Auction System
-        </Typography>
+        </Box>
       </Box>
-    </Container>
+    </Box>
   );
 }

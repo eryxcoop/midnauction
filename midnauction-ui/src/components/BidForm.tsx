@@ -1,210 +1,140 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
+  Box,
+  Button,
   Card,
   CardContent,
-  Typography,
   TextField,
-  Button,
-  Box,
+  Typography,
   Alert,
-  InputAdornment,
-  Stepper,
-  Step,
-  StepLabel,
+  CircularProgress
 } from '@mui/material';
-import { AttachMoney, Lock, Send } from '@mui/icons-material';
-import { AuctionRound } from '../types';
+import { AttachMoney, Lock } from '@mui/icons-material';
 
 interface BidFormProps {
-  currentRound: AuctionRound;
   minimumBidValue: number;
   canSubmitBid: boolean;
-  canRevealBid: boolean;
   hasSubmittedBid: boolean;
   isParticipant: boolean;
-  onSubmitBid: (amount: number) => Promise<void>;
-  onRevealBid: () => Promise<void>;
-  loading: boolean;
-  error: string | null;
+  onSubmitBid: (bidAmount: number) => Promise<void>;
+  loading?: boolean;
+  error?: string | null;
 }
 
 export function BidForm({
-  currentRound,
   minimumBidValue,
   canSubmitBid,
-  canRevealBid,
   hasSubmittedBid,
   isParticipant,
   onSubmitBid,
-  onRevealBid,
-  loading,
-  error,
+  loading = false,
+  error = null
 }: BidFormProps) {
-  const [bidAmount, setBidAmount] = useState<string>('');
-  const [bidError, setBidError] = useState<string>('');
+  const [bidAmount, setBidAmount] = useState('');
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleBidChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    setBidAmount(value);
-    
-    const numValue = parseFloat(value);
-    if (value && numValue < minimumBidValue) {
-      setBidError(`La oferta debe ser mayor a $${minimumBidValue}`);
-    } else {
-      setBidError('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLocalError(null);
+
+    if (!bidAmount || isNaN(Number(bidAmount))) {
+      setLocalError('Please enter a valid bid amount');
+      return;
     }
-  };
 
-  const handleSubmitBid = async () => {
-    const amount = parseFloat(bidAmount);
-    if (isNaN(amount) || amount < minimumBidValue) {
-      setBidError(`Por favor ingrese una cantidad válida mayor a $${minimumBidValue}`);
+    const amount = Number(bidAmount);
+    if (amount < minimumBidValue) {
+      setLocalError(`Bid must be at least ${minimumBidValue}`);
       return;
     }
 
     try {
       await onSubmitBid(amount);
       setBidAmount('');
-      setBidError('');
     } catch (err) {
-      setBidError(err instanceof Error ? err.message : 'Error al enviar la oferta');
+      setLocalError(err instanceof Error ? err.message : 'Failed to submit bid');
     }
   };
 
-  const handleRevealBid = async () => {
-    try {
-      await onRevealBid();
-    } catch (err) {
-      // Error handling is done in the context
-    }
-  };
+  if (!isParticipant) {
+    return null;
+  }
 
-  const getActiveStep = () => {
-    if (currentRound === AuctionRound.BIDDING) return 0;
-    if (currentRound === AuctionRound.REVEALING) return 1;
-    return 2;
-  };
+  if (hasSubmittedBid) {
+    return (
+      <Card>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Bid Submitted
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            You have already submitted a bid for this auction.
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
+  if (!canSubmitBid) {
+    return (
+      <Card>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Bidding Closed
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Bidding is not currently open for this auction.
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardContent>
-        <Typography variant="h6" mb={3}>
-          Auction Participation
+        <Typography variant="h6" gutterBottom>
+          Submit Your Bid
+        </Typography>
+        <Typography variant="body2" color="text.secondary" paragraph>
+          Enter your bid amount. Your bid will be kept private until the revealing phase.
         </Typography>
 
-        <Stepper activeStep={getActiveStep()} sx={{ mb: 3 }}>
-          <Step>
-            <StepLabel>Submit Private Bid</StepLabel>
-          </Step>
-          <Step>
-            <StepLabel>Reveal Bid</StepLabel>
-          </Step>
-          <Step>
-            <StepLabel>Results</StepLabel>
-          </Step>
-        </Stepper>
-
-        {error && (
+        {(error || localError) && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
+            {error || localError}
           </Alert>
         )}
 
-        {/* Private Bidding Phase */}
-        {currentRound === AuctionRound.BIDDING && (
-          <Box>
-            {canSubmitBid && !hasSubmittedBid && (
-              <Box>
-                <Typography variant="body1" mb={2}>
-                  {!isParticipant 
-                    ? "Enter your bid to join the auction. Only you will know the amount until the revelation phase."
-                    : "Enter your private bid. Only you will know the amount until the revelation phase."
-                  }
-                </Typography>
-                
-                <TextField
-                  fullWidth
-                  label="Bid Amount"
-                  type="number"
-                  value={bidAmount}
-                  onChange={handleBidChange}
-                  error={!!bidError}
-                  helperText={bidError || `Minimum: ${formatCurrency(minimumBidValue)}`}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <AttachMoney />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ mb: 2 }}
-                />
-                
-                <Button
-                  fullWidth
-                  variant="contained"
-                  onClick={handleSubmitBid}
-                  disabled={loading || !!bidError || !bidAmount}
-                  startIcon={<Lock />}
-                  size="large"
-                >
-                  {loading 
-                    ? 'Submitting Bid...' 
-                    : (!isParticipant ? 'Join with Bid' : 'Submit Private Bid')
-                  }
-                </Button>
-              </Box>
-            )}
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2 }}>
+          <TextField
+            fullWidth
+            label="Bid Amount (USD)"
+            type="number"
+            value={bidAmount}
+            onChange={(e) => setBidAmount(e.target.value)}
+            required
+            inputProps={{ 
+              min: minimumBidValue,
+              step: 0.01 
+            }}
+            InputProps={{
+              startAdornment: <AttachMoney sx={{ mr: 1 }} />,
+            }}
+            helperText={`Minimum bid: $${minimumBidValue}`}
+          />
 
-            {hasSubmittedBid && (
-              <Alert severity="success" icon={<Lock />}>
-                ✓ Your private bid has been submitted successfully. 
-                Wait for the revelation phase to begin.
-              </Alert>
-            )}
-
-            {!canSubmitBid && !hasSubmittedBid && (
-              <Alert severity="warning">
-                The bidding period has ended. No new bids can be submitted.
-              </Alert>
-            )}
-          </Box>
-        )}
-
-        {/* Revelation Phase */}
-        {currentRound === AuctionRound.REVEALING && (
-          <Box>
-            {hasSubmittedBid ? (
-              <Alert severity="info">
-                <Typography variant="body1" mb={1}>
-                  <strong>Revelation Phase in Progress</strong>
-                </Typography>
-                <Typography variant="body2">
-                                  The auctioneer is revealing bids automatically.
-                Your bid will be revealed when the auctioneer decides.
-                </Typography>
-              </Alert>
-            ) : (
-              <Alert severity="warning">
-                You did not participate in this auction. The bidding phase has already ended.
-              </Alert>
-            )}
-          </Box>
-        )}
-
-        {/* Auction Finished */}
-        {currentRound === AuctionRound.FINISHED && (
-          <Alert severity="success">
-                          🎉 The auction has finished. You can see the final results above.
-          </Alert>
-        )}
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading || !bidAmount}
+            startIcon={loading ? <CircularProgress size={20} /> : <Lock />}
+            fullWidth
+          >
+            {loading ? 'Submitting...' : 'Submit Private Bid'}
+          </Button>
+        </Box>
       </CardContent>
     </Card>
   );

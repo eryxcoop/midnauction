@@ -61,7 +61,7 @@ export const AuctionGame: React.FC<Readonly<AuctionGameProps>> = ({ auctionDeplo
 
     const subscription = auctionDeployment$.subscribe({
       next: setAuctionDeployment,
-      error: (error) => setErrorMessage(error instanceof Error ? error.message : String(error)),
+      error: (error: any) => setErrorMessage(error instanceof Error ? error.message : String(error)),
     });
 
     return () => subscription.unsubscribe();
@@ -80,7 +80,7 @@ export const AuctionGame: React.FC<Readonly<AuctionGameProps>> = ({ auctionDeplo
 
     const subscription = api.state$.subscribe({
       next: setAuctionState,
-      error: (error) => setErrorMessage(error instanceof Error ? error.message : String(error)),
+      error: (error: any) => setErrorMessage(error instanceof Error ? error.message : String(error)),
     });
 
     return () => subscription.unsubscribe();
