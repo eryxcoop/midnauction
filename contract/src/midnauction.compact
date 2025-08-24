@@ -11,8 +11,8 @@ export ledger currentRound: Counter;
 export ledger auctioneerPK: Bytes<32>;
 //export ledger maxParticipantCount: Uint<64>;
 export ledger registeredParticipants: Set<Bytes<32>>;
-export ledger lastRoundSecretBids: Set<[Bytes<32>, Bytes<32>]>; // (CommitDelValor, CommitDeIdentidad) 
-export ledger lastRoundRevealedBids: Set<Uint<64>>; // valor revelado  
+export ledger secretBids: Set<[Bytes<32>, Bytes<32>]>; // (CommitDelValor, CommitDeIdentidad) 
+export ledger revealedBids: Set<Uint<64>>; // valor revelado  
 export ledger phase: PHASE;
 export ledger winnerEncryptedPublicKey: Bytes<32>;
 
@@ -30,8 +30,8 @@ constructor(
     currentRound.increment(1); // We want to initialize the round counter in 1
     auctioneerPK = disclose(auctioneerPK_);
     registeredParticipants.resetToDefault(); // = default<Set<Bytes<32>>>;
-    lastRoundSecretBids.resetToDefault();// = default<Set<[Bytes<32>, Bytes<32>]>>;
-    lastRoundRevealedBids.resetToDefault();// = default<Set<Bytes<32>>>;
+    secretBids.resetToDefault();// = default<Set<[Bytes<32>, Bytes<32>]>>;
+    revealedBids.resetToDefault();// = default<Set<Bytes<32>>>;
     phase = PHASE.commitment;
     //Ownable_initialize(left<ZswapCoinPublicKey, ContractAddress>(auctioneerPK));
 }
@@ -44,7 +44,7 @@ export circuit commitSecretBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: By
         registeredParticipants.insert(identityCommit);
     }
     assert(registeredParticipants.member(identityCommit), "You are not registered as participant");
-    lastRoundSecretBids.insert(disclose([bidCommit, identityCommit]));
+    secretBids.insert(disclose([bidCommit, identityCommit]));
 }
 
 export circuit moveToRevealPhase(): [] {
@@ -58,16 +58,16 @@ export circuit revealBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32
     const bidCommit = persistentCommit<Uint<64>>(value, bidNonce);
     const identityCommit = disclose(persistentCommit<Bytes<32>>(secretKey(), idNonce));
     assert(registeredParticipants.member(identityCommit), "You are not registered as a participant");
-    assert(lastRoundSecretBids.member(disclose([bidCommit, identityCommit])), "That bid is a lie");
-    lastRoundRevealedBids.insert(disclose(value));
+    assert(secretBids.member(disclose([bidCommit, identityCommit])), "That bid is a lie");
+    revealedBids.insert(disclose(value));
 }
 
 export circuit moveToNextPhase(): [] {
     Ownable_assertOnlyOwner();
     assert(phase == PHASE.revealing, "Wrong phase to do that");
     assert(currentRound.read() != rounds, "This is the last round");
-    lastRoundRevealedBids.resetToDefault();
-    lastRoundSecretBids.resetToDefault();
+    revealedBids.resetToDefault();
+    secretBids.resetToDefault();
     phase = PHASE.commitment;
     currentRound.increment(1);
 }
@@ -77,7 +77,7 @@ export circuit claimWin(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>
     assert(currentRound.read() == rounds, "There are still missing rounds");
     const bidCommit = persistentCommit<Uint<64>>(value, bidNonce);
     const identityCommit = disclose(persistentCommit<Bytes<32>>(secretKey(), idNonce));
-    assert(lastRoundSecretBids.member(disclose([bidCommit, identityCommit])), "That bid is a lie");
+    assert(secretBids.member(disclose([bidCommit, identityCommit])), "That bid is a lie");
     winnerEncryptedPublicKey = disclose(encryptedPublicKey);
 }
 
