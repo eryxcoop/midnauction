@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AuctionState, AuctionData, AuctionRound, PrivateBid, RevealedBid } from '../types';
+import { AuctionAPI, type AuctionProviders } from '@midnight-ntwrk/midnauction-api';
+import { apiStateToUIState, dollarsToCents } from '../types/api-adapter';
 
 interface AuctionContextType {
   auctionState: AuctionState;
@@ -7,14 +9,18 @@ interface AuctionContextType {
   revealBid: () => Promise<void>;
   joinAuction: () => Promise<void>;
   refreshAuctionData: () => Promise<void>;
-  // Funciones de control del martillero
+  // Auctioneer control functions
   startBiddingPhase: () => Promise<void>;
   closeBidding: () => Promise<void>;
   startRevealingPhase: () => Promise<void>;
   finishAuction: () => Promise<void>;
   revealSpecificBid: (participantId: string, bidAmount: number) => Promise<void>;
+  // API management
+  deployNewAuction: (productName: string, productDescription: string, minimumBid: number) => Promise<void>;
+  joinExistingAuction: (contractAddress: string) => Promise<void>;
   loading: boolean;
   error: string | null;
+  isConnected: boolean;
 }
 
 const AuctionContext = createContext<AuctionContextType | undefined>(undefined);
@@ -35,9 +41,15 @@ const createMockAuctionData = (): AuctionData => ({
 
 interface AuctionProviderProps {
   children: ReactNode;
+  providers?: AuctionProviders; // Optional providers for the API
 }
 
-export function AuctionProvider({ children }: AuctionProviderProps) {
+export function AuctionProvider({ children, providers }: AuctionProviderProps) {
+  // API instance state
+  const [auctionAPI, setAuctionAPI] = useState<AuctionAPI | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  
+  // UI state
   const [auctionState, setAuctionState] = useState<AuctionState>({
     auction: createMockAuctionData(),
     isParticipant: false,
@@ -46,30 +58,76 @@ export function AuctionProvider({ children }: AuctionProviderProps) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Subscribe to API state changes when API is available
+  useEffect(() => {
+    if (!auctionAPI) return;
+
+    const subscription = auctionAPI.state$.subscribe({
+      next: (apiState) => {
+        const uiState = apiStateToUIState(apiState);
+        setAuctionState(uiState);
+      },
+      error: (err) => {
+        console.error('API state subscription error:', err);
+        setError('Error receiving auction updates');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [auctionAPI]);
   
-  const joinAuction = async (): Promise<void> => {
+  // API management functions
+  const deployNewAuction = async (productName: string, productDescription: string, minimumBid: number): Promise<void> => {
+    if (!providers) {
+      throw new Error('Providers not available for auction deployment');
+    }
+
     setLoading(true);
     setError(null);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setAuctionState(prev => ({
-        ...prev,
-        isParticipant: true,
-        canSubmitBid: prev.auction.currentRound === AuctionRound.BIDDING,
-        auction: {
-          ...prev.auction,
-          participantCount: prev.auction.participantCount + 1,
-        }
-      }));
+      const api = await AuctionAPI.deploy(providers);
+      await api.createAuction(productName, productDescription, dollarsToCents(minimumBid));
+      setAuctionAPI(api);
+      setIsConnected(true);
     } catch (err) {
-      setError('Error joining the auction');
+      setError(`Error deploying auction: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
+  const joinExistingAuction = async (contractAddress: string): Promise<void> => {
+    if (!providers) {
+      throw new Error('Providers not available for joining auction');
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const api = await AuctionAPI.join(providers, contractAddress as any);
+      setAuctionAPI(api);
+      setIsConnected(true);
+    } catch (err) {
+      setError(`Error joining auction: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const joinAuction = async (): Promise<void> => {
+    // This function is now deprecated in favor of joinExistingAuction
+    // Keep for backward compatibility
+    setError('Please use the join buttons on the home page to connect to an auction');
+  };
+
   const submitBid = async (bidAmount: number): Promise<void> => {
+    if (!auctionAPI) {
+      throw new Error('Not connected to an auction. Please join an auction first.');
+    }
+
     if (bidAmount < auctionState.auction.minimumBidValue) {
       throw new Error(`The bid must be greater than $${auctionState.auction.minimumBidValue}`);
     }
@@ -81,34 +139,11 @@ export function AuctionProvider({ children }: AuctionProviderProps) {
     setLoading(true);
     setError(null);
     try {
-      // Simulate commitment creation
-      const nonce = Math.random().toString(36).substring(7);
-      const commitment = `hash_${bidAmount}_${nonce}`;
-      
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const privateBid: PrivateBid = {
-        bidAmount,
-        nonce,
-        commitment,
-      };
-
-      setAuctionState(prev => {
-        const isFirstBid = !prev.isParticipant;
-        return {
-          ...prev,
-          currentUserBid: privateBid,
-                  isParticipant: true, // Automatically joins when submitting the first bid
-        canSubmitBid: false, // Can no longer submit more bids
-          auction: {
-            ...prev.auction,
-            totalBids: isFirstBid ? prev.auction.totalBids + 1 : prev.auction.totalBids,
-          }
-        };
-      });
+      await auctionAPI.submitBid(dollarsToCents(bidAmount));
+      // State will be updated automatically via the subscription
     } catch (err) {
-      setError('Error submitting the bid');
+      setError(`Error submitting bid: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -120,23 +155,18 @@ export function AuctionProvider({ children }: AuctionProviderProps) {
   };
 
   const refreshAuctionData = async (): Promise<void> => {
+    if (!auctionAPI) {
+      setError('Not connected to an auction');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In a real implementation, this would fetch from the API
-      setAuctionState(prev => ({
-        ...prev,
-        auction: {
-          ...prev.auction,
-          // Simulate some random changes
-          totalBids: Math.min(prev.auction.totalBids + Math.floor(Math.random() * 2), 10),
-        }
-      }));
+      await auctionAPI.refreshState();
+      // State will be updated automatically via the subscription
     } catch (err) {
-      setError('Error updating data');
+      setError(`Error refreshing auction data: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -144,103 +174,90 @@ export function AuctionProvider({ children }: AuctionProviderProps) {
 
   // Auctioneer control functions
   const startBiddingPhase = async (): Promise<void> => {
+    if (!auctionAPI) {
+      throw new Error('Not connected to an auction');
+    }
+
     setLoading(true);
     setError(null);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setAuctionState(prev => ({
-        ...prev,
-        auction: {
-          ...prev.auction,
-          currentRound: AuctionRound.BIDDING,
-        },
-        canSubmitBid: true, // Enable bids
-      }));
+      // Note: This function might not be needed as auctions start in bidding phase
+      // Keeping for compatibility, but it's essentially a no-op
+      await auctionAPI.refreshState();
     } catch (err) {
-      setError('Error starting the bidding phase');
+      setError(`Error starting bidding phase: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   const closeBidding = async (): Promise<void> => {
+    if (!auctionAPI) {
+      throw new Error('Not connected to an auction');
+    }
+
     setLoading(true);
     setError(null);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setAuctionState(prev => ({
-        ...prev,
-        canSubmitBid: false, // Close bids
-      }));
+      await auctionAPI.closeBidding();
     } catch (err) {
-      setError('Error closing the bids');
+      setError(`Error closing bidding: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   const startRevealingPhase = async (): Promise<void> => {
+    if (!auctionAPI) {
+      throw new Error('Not connected to an auction');
+    }
+
     setLoading(true);
     setError(null);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setAuctionState(prev => ({
-        ...prev,
-        auction: {
-          ...prev.auction,
-          currentRound: AuctionRound.REVEALING,
-        },
-        canSubmitBid: false, // Ensure no bids can be submitted
-      }));
+      await auctionAPI.startRevealing();
     } catch (err) {
-      setError('Error starting the revelation phase');
+      setError(`Error starting revealing phase: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   const finishAuction = async (): Promise<void> => {
+    if (!auctionAPI) {
+      throw new Error('Not connected to an auction');
+    }
+
     setLoading(true);
     setError(null);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setAuctionState(prev => ({
-        ...prev,
-        auction: {
-          ...prev.auction,
-          currentRound: AuctionRound.FINISHED,
-        },
-        canSubmitBid: false,
-        canRevealBid: false,
-      }));
+      await auctionAPI.finishAuction();
     } catch (err) {
-      setError('Error finishing the auction');
+      setError(`Error finishing auction: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   const revealSpecificBid = async (participantId: string, bidAmount: number): Promise<void> => {
+    if (!auctionAPI) {
+      throw new Error('Not connected to an auction');
+    }
+
     setLoading(true);
     setError(null);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const newRevealedBid: RevealedBid = {
-        participantId,
-        bidAmount,
-        timestamp: Date.now(),
-      };
-
-      setAuctionState(prev => ({
-        ...prev,
-        auction: {
-          ...prev.auction,
-          revealedBids: [...prev.auction.revealedBids, newRevealedBid],
-        }
-      }));
+      // Note: The API doesn't have revealSpecificBid, so we'll simulate it
+      // In a real implementation, this would be handled by the auctioneer automatically
+      const mockNonce = new Uint8Array(32);
+      await auctionAPI.revealBid(dollarsToCents(bidAmount), mockNonce);
     } catch (err) {
-      setError('Error revealing the bid');
+      setError(`Error revealing bid: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -258,8 +275,12 @@ export function AuctionProvider({ children }: AuctionProviderProps) {
     startRevealingPhase,
     finishAuction,
     revealSpecificBid,
+    // API management
+    deployNewAuction,
+    joinExistingAuction,
     loading,
     error,
+    isConnected,
   };
 
   return (

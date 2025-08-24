@@ -1,0 +1,49 @@
+# Midnauction Auction API Standalone Configuration
+# This file configures the standalone deployment of the auction API
+
+name: midnauction-auction-api
+version: 0.1.0
+
+# Contract configuration
+contract:
+  name: midnauction-auction
+  description: "Private auction system with commitment-based bidding"
+  
+# Network configuration
+network:
+  # These will be configured based on the target Midnight network
+  rpc_url: "https://rpc.midnight.network"
+  chain_id: "midnight-testnet"
+  
+# API configuration
+api:
+  port: 3001
+  cors:
+    enabled: true
+    origins: 
+      - "http://localhost:3000"
+      - "http://localhost:5173"
+  
+# Logging configuration
+logging:
+  level: "info"
+  format: "json"
+  
+# Security configuration
+security:
+  rate_limiting:
+    enabled: true
+    max_requests_per_minute: 100
+  
+# Auction-specific settings
+auction:
+  default_minimum_bid: 100 # $1.00 in cents
+  max_bid_amount: 1000000000 # $10,000,000.00 in cents
+  default_bidding_duration: 3600000 # 1 hour in milliseconds
+  default_revealing_duration: 1800000 # 30 minutes in milliseconds
+  
+# Development settings
+development:
+  mock_contract: true
+  auto_advance_phases: false
+  debug_logging: true

@@ -1,0 +1,30 @@
+{
+  "name": "@midnight-ntwrk/midnauction-api",
+  "version": "0.1.0",
+  "author": "Midnauction Team",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "module": "./dist/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "rm -rf dist && tsc --project tsconfig.build.json",
+    "ci": "npm run typecheck && npm run lint && npm run build",
+    "lint": "eslint src",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "^0.7.0",
+    "@midnight-ntwrk/midnight-js-contracts": "^0.1.0",
+    "@midnight-ntwrk/midnight-js-types": "^0.1.0",
+    "pino": "^8.0.0",
+    "rxjs": "^7.8.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

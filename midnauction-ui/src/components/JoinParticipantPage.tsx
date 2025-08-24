@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuction } from '../contexts';
 import {
   Container,
   Box,
@@ -19,35 +20,35 @@ import {
 
 export function JoinParticipantPage() {
   const navigate = useNavigate();
+  const { joinExistingAuction, loading: contextLoading, error: contextError } = useAuction();
   const [contractAddress, setContractAddress] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+  
+  const loading = contextLoading;
+  const error = contextError || localError;
 
   const handleJoinAuction = async () => {
     if (!contractAddress.trim()) {
-      setError('Please enter the contract address');
+      setLocalError('Please enter the contract address');
       return;
     }
 
-    // Validación básica de formato de dirección
+    // Basic address format validation
     if (!contractAddress.startsWith('0x')) {
-      setError('The contract address must have the correct format (0x...)');
+      setLocalError('The contract address must have the correct format (0x...)');
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    setLocalError(null);
 
     try {
-      // Simular verificación del contrato
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Join existing auction using the API
+      await joinExistingAuction(contractAddress);
       
       // Redirect to auction screen as participant
       navigate(`/auction/${contractAddress}?role=participant`);
     } catch (err) {
-      setError('Could not connect to the auction. Please verify the contract address.');
-    } finally {
-      setLoading(false);
+      setLocalError(`Could not connect to the auction: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -57,7 +58,7 @@ export function JoinParticipantPage() {
 
   const handleAddressChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setContractAddress(event.target.value);
-    if (error) setError(null); // Limpiar error al escribir
+    if (localError) setLocalError(null); // Clear error when typing
   };
 
   return (

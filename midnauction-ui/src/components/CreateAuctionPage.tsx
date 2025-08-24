@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuction } from '../contexts';
 import {
   Container,
   Box,
@@ -23,8 +24,11 @@ import {
 
 export function CreateAuctionPage() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { deployNewAuction, loading: contextLoading, error: contextError } = useAuction();
+  const [localError, setLocalError] = useState<string | null>(null);
+  
+  const loading = contextLoading;
+  const error = contextError || localError;
   const [formData, setFormData] = useState({
     productName: '',
     productDescription: '',
@@ -40,41 +44,33 @@ export function CreateAuctionPage() {
 
   const handleCreateAuction = async () => {
     if (!formData.productName || !formData.productDescription || !formData.minimumBidValue) {
-      setError('Please complete all fields');
+      setLocalError('Please complete all fields');
       return;
     }
 
     const minBid = parseFloat(formData.minimumBidValue);
     if (isNaN(minBid) || minBid <= 0) {
-      setError('The minimum value must be a number greater than 0');
+      setLocalError('The minimum value must be a number greater than 0');
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    setLocalError(null);
 
     try {
-      // Simular creación de contrato
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Deploy new auction using the API
+      await deployNewAuction(
+        formData.productName,
+        formData.productDescription,
+        minBid
+      );
       
-      // Simular dirección de contrato generada
+      // Generate a mock contract address for navigation
       const contractAddress = `0x${Math.random().toString(16).substring(2, 42)}`;
       
       // Redirect to auction screen as auctioneer
-      navigate(`/auction/${contractAddress}?role=auctioneer`, {
-        state: {
-          auctionData: {
-            productName: formData.productName,
-            productDescription: formData.productDescription,
-            minimumBidValue: minBid,
-            contractAddress,
-          }
-        }
-      });
+      navigate(`/auction/${contractAddress}?role=auctioneer`);
     } catch (err) {
-      setError('Error creating the auction. Please try again.');
-    } finally {
-      setLoading(false);
+      setLocalError(`Error creating the auction: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
