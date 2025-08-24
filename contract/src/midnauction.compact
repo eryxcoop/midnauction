@@ -74,9 +74,10 @@ export circuit moveToNextPhase(): [] {
 
 export circuit claimWin(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>, encryptedPublicKey: Bytes<32>): [] {
     assert(phase == PHASE.revealing, "Bids are not revealed yet");
-    assert(currentRound.read() == rounds, "There are still missing rounds")
+    assert(currentRound.read() == rounds, "There are still missing rounds");
     const bidCommit = persistentCommit<Uint<64>>(value, bidNonce);
     const identityCommit = disclose(persistentCommit<Bytes<32>>(secretKey(), idNonce));
     assert(lastRoundSecretBids.member(disclose([bidCommit, identityCommit])), "That bid is a lie");
     winnerEncryptedPublicKey = disclose(encryptedPublicKey);
+    phase = PHASE.finished;
 }
