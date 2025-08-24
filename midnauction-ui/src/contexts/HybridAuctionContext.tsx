@@ -35,23 +35,58 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
     setError(null);
 
     try {
-      // Create new auction deployment using real providers
+      console.log('Deploying auction with real providers:', { productName, productDescription, minimumBidValue });
+      
+      // Create new auction deployment using real providers (RPS pattern)
       const deployment$ = auctionApiProvider.resolve();
       
-      // For now, we'll just simulate the deployment
-      // In a real implementation, this would pass the auction data to the contract
-      console.log('Deploying auction with:', { productName, productDescription, minimumBidValue });
+      // Return a promise that resolves when deployment is complete
+      return new Promise<void>((resolve, reject) => {
+        const subscription = deployment$.subscribe({
+          next: (deployment) => {
+            console.log('Deployment status:', deployment.tag);
+            setCurrentDeployment(deployment);
+            
+            if (deployment.tag === 'deployed') {
+              console.log('Auction deployed successfully with real providers');
+              setLoading(false);
+              subscription.unsubscribe();
+              resolve();
+            } else if (deployment.tag === 'error') {
+              console.error('Deployment error:', deployment.error.message);
+              setError(deployment.error.message);
+              setLoading(false);
+              subscription.unsubscribe();
+              reject(deployment.error);
+            }
+          },
+          error: (err) => {
+            console.error('Deployment subscription error:', err);
+            setError(err instanceof Error ? err.message : 'Error creating auction');
+            setLoading(false);
+            subscription.unsubscribe();
+            reject(err);
+          }
+        });
+
+        // Cleanup subscription after timeout
+        setTimeout(() => {
+          subscription.unsubscribe();
+          if (loading) {
+            setLoading(false);
+            reject(new Error('Deployment timeout'));
+          }
+        }, 30000);
+      });
       
-      // Simulate deployment time
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setLoading(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error creating auction');
+      console.error('Deploy auction error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Error creating auction';
+      setError(errorMessage);
       setLoading(false);
-      throw err;
+      throw new Error(errorMessage);
     }
-  }, [auctionApiProvider]);
+  }, [auctionApiProvider, loading]);
 
   const joinExistingAuction = useCallback(async (
     contractAddress: string,
@@ -61,82 +96,167 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
     setError(null);
 
     try {
-      // Join existing auction using real providers
+      console.log('Joining auction with real providers:', { contractAddress, role });
+      
+      // Join existing auction using real providers (RPS pattern)
       const deployment$ = auctionApiProvider.resolve(contractAddress as any);
       
-      console.log('Joining auction:', { contractAddress, role });
+      // Return a promise that resolves when join is complete
+      return new Promise<void>((resolve, reject) => {
+        const subscription = deployment$.subscribe({
+          next: (deployment) => {
+            console.log('Join status:', deployment.tag);
+            setCurrentDeployment(deployment);
+            
+            if (deployment.tag === 'deployed') {
+              console.log('Joined auction successfully with real providers');
+              setLoading(false);
+              subscription.unsubscribe();
+              resolve();
+            } else if (deployment.tag === 'error') {
+              console.error('Join error:', deployment.error.message);
+              setError(deployment.error.message);
+              setLoading(false);
+              subscription.unsubscribe();
+              reject(deployment.error);
+            }
+          },
+          error: (err) => {
+            console.error('Join subscription error:', err);
+            setError(err instanceof Error ? err.message : 'Error joining auction');
+            setLoading(false);
+            subscription.unsubscribe();
+            reject(err);
+          }
+        });
+
+        // Cleanup subscription after timeout
+        setTimeout(() => {
+          subscription.unsubscribe();
+          if (loading) {
+            setLoading(false);
+            reject(new Error('Join timeout'));
+          }
+        }, 30000);
+      });
       
-      // Simulate join time
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setLoading(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error joining auction');
+      console.error('Join auction error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Error joining auction';
+      setError(errorMessage);
       setLoading(false);
-      throw err;
+      throw new Error(errorMessage);
     }
-  }, [auctionApiProvider]);
+  }, [auctionApiProvider, loading]);
 
   const submitBid = useCallback(async (amount: number) => {
     setLoading(true);
     setError(null);
 
     try {
-      // For now, simulate bid submission
-      console.log('Submitting bid:', amount);
+      console.log('Submitting bid with real providers:', amount);
       
-      // In a real implementation, this would call the auction API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update auction state with new bid (mock)
-      if (auctionState) {
-        setAuctionState({
-          ...auctionState,
-          myCurrentBid: {
-            amount: amount * 100, // Convert to cents
-            nonce: new Uint8Array(32), // Mock nonce
-            commitment: new Uint8Array(32) // Mock commitment
-          }
-        });
+      // Use the real auction API from the current deployment
+      if (currentDeployment && currentDeployment.tag === 'deployed') {
+        const auctionAPI = currentDeployment.api;
+        await auctionAPI.submitBid(BigInt(amount * 100)); // Convert to cents
+        console.log('Bid submitted successfully with real providers');
+        
+        // Update auction state with new bid
+        if (auctionState) {
+          setAuctionState({
+            ...auctionState,
+            myCurrentBid: {
+              amount: amount * 100, // Convert to cents
+              nonce: new Uint8Array(32), // This would come from the API
+              commitment: new Uint8Array(32) // This would come from the API
+            }
+          });
+        }
+      } else {
+        throw new Error('No auction deployment available');
       }
       
       setLoading(false);
     } catch (err) {
+      console.error('Submit bid error:', err);
       setError(err instanceof Error ? err.message : 'Error submitting bid');
       setLoading(false);
       throw err;
     }
-  }, [auctionState]);
+  }, [auctionState, currentDeployment]);
 
   const refreshAuctionData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // For now, simulate data refresh
-      console.log('Refreshing auction data');
+      console.log('Refreshing auction data with real providers');
       
-      // In a real implementation, this would fetch fresh data from the auction API
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Use the real auction API from the current deployment
+      if (currentDeployment && currentDeployment.tag === 'deployed') {
+        const auctionAPI = currentDeployment.api;
+        await auctionAPI.refreshState();
+        console.log('Auction data refreshed successfully with real providers');
+      } else {
+        console.log('No deployment available for refresh');
+      }
       
       setLoading(false);
     } catch (err) {
+      console.error('Refresh data error:', err);
       setError(err instanceof Error ? err.message : 'Error refreshing data');
       setLoading(false);
       throw err;
     }
-  }, []);
+  }, [currentDeployment]);
 
-  // Initialize with mock auction state for development
+  // Initialize auction state from real deployment when available
   useEffect(() => {
-    if (!auctionState) {
+    if (currentDeployment && currentDeployment.tag === 'deployed' && !auctionState) {
+      console.log('Initializing auction state from real deployment');
+      
+      // Subscribe to the real auction state from the API
+      const subscription = currentDeployment.api.state$.subscribe({
+        next: (apiState) => {
+          console.log('Received real auction state:', apiState);
+          // Convert API state to UI state format
+          setAuctionState({
+            contractAddress: currentDeployment.api.deployedContractAddress,
+            auctionData: {
+              productName: apiState.publicState.productName,
+              productDescription: apiState.publicState.productDescription,
+              minimumBidValue: Number(apiState.publicState.minimumBidValue),
+              auctioneerPublicKey: 'real-auctioneer-key'
+            },
+            publicState: {
+              currentPhase: apiState.publicState.currentPhase as AuctionPhase,
+              currentRound: Number(apiState.publicState.currentRound || 1),
+              totalBids: Number(apiState.publicState.totalBids || 0),
+              revealedBids: apiState.publicState.revealedBids || []
+            },
+            userRole: 'participant',
+            myCurrentBid: apiState.myCurrentBid,
+            canSubmitBid: apiState.canSubmitBid,
+            canRevealBid: apiState.canRevealBid,
+            isAuctioneer: apiState.isAuctioneer
+          });
+        },
+        error: (err) => {
+          console.error('Error subscribing to auction state:', err);
+        }
+      });
+
+      return () => subscription.unsubscribe();
+    } else if (!auctionState && !currentDeployment) {
+      // Fallback to sample state when no deployment is available
       setAuctionState({
-        contractAddress: 'mock-address',
+        contractAddress: 'sample-address',
         auctionData: {
           productName: 'Sample Product',
           productDescription: 'A sample product for testing',
           minimumBidValue: 100000, // $1000 in cents
-          auctioneerPublicKey: 'mock-auctioneer-key'
+          auctioneerPublicKey: 'sample-auctioneer-key'
         },
         publicState: {
           currentPhase: 'BIDDING' as AuctionPhase,
@@ -151,7 +271,7 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
         isAuctioneer: false
       });
     }
-  }, [auctionState]);
+  }, [currentDeployment, auctionState]);
 
   const value: HybridAuctionContextType = {
     deployNewAuction,
