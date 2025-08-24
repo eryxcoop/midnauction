@@ -110,11 +110,13 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
       return new Promise<void>((resolve, reject) => {
         const subscription = deployment$.subscribe({
           next: (deployment) => {
-            console.log('Join status:', deployment.tag);
+            console.log('Join status:', deployment.tag, 'Full deployment:', deployment);
             setCurrentDeployment(deployment);
             
             if (deployment.tag === 'deployed') {
               console.log('Joined auction successfully with real providers');
+              console.log('Deployment API:', deployment.api);
+              console.log('Deployment API state$:', deployment.api?.state$);
               setLoading(false);
               subscription.unsubscribe();
               resolve();
@@ -218,50 +220,138 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
 
   // Initialize auction state from real deployment when available
   useEffect(() => {
+    console.log('Deployment effect triggered:', { 
+      hasDeployment: !!currentDeployment, 
+      deploymentTag: currentDeployment?.tag,
+      hasAuctionState: !!auctionState 
+    });
+    
     if (currentDeployment && currentDeployment.tag === 'deployed' && !auctionState) {
       console.log('Initializing auction state from real deployment');
       
+      // Check if the API has a state$ observable
+      if (!currentDeployment.api.state$) {
+        console.error('API does not have state$ observable');
+        
+        // Fallback: create basic auction state from deployment info
+        console.log('Creating fallback auction state from deployment');
+        const fallbackState = {
+          auction: {
+            productName: 'Auction Contract',
+            productDescription: 'Connected to auction contract',
+            minimumBidValue: 1000, // $10.00 in cents
+            auctioneerPublicKey: 'connected',
+            currentRound: AuctionRound.BIDDING,
+            totalBids: 0,
+            revealedBids: []
+          },
+          currentUserBid: undefined,
+          isParticipant: true,
+          canSubmitBid: true,
+          canRevealBid: false
+        };
+        
+        console.log('Setting fallback auction state:', fallbackState);
+        setAuctionState(fallbackState);
+        return;
+      }
+      
+      // Debug: inspect the API object
+      console.log('API object:', currentDeployment.api);
+      console.log('API state$:', currentDeployment.api.state$);
+      console.log('API state$ type:', typeof currentDeployment.api.state$);
+      console.log('API state$ subscribe:', typeof currentDeployment.api.state$.subscribe);
+
       // Subscribe to the real auction state from the API
+      console.log('About to subscribe to API state$...');
       const subscription = currentDeployment.api.state$.subscribe({
         next: (apiState: any) => {
           console.log('Received real auction state:', apiState);
-          // Convert API state to UI state format
-          setAuctionState({
-            auction: {
-              productName: apiState.publicState.productName,
-              productDescription: apiState.publicState.productDescription,
-              minimumBidValue: Number(apiState.publicState.minimumBidValue),
-              auctioneerPublicKey: Array.from(apiState.publicState.auctioneerPublicKey).map((b: any) => b.toString(16).padStart(2, '0')).join(''),
-              currentRound: apiState.publicState.currentPhase === 'bidding' ? AuctionRound.BIDDING : 
-                           apiState.publicState.currentPhase === 'revealing' ? AuctionRound.REVEALING : AuctionRound.FINISHED,
-              totalBids: Number(apiState.publicState.totalBids),
-              revealedBids: apiState.publicState.revealedBids.map((bid: any) => ({
-                participantId: bid.participantId,
-                bidAmount: Number(bid.bidAmount),
-                timestamp: Number(bid.timestamp)
-              }))
-            },
-            currentUserBid: apiState.myCurrentBid ? {
-              bidAmount: Number(apiState.myCurrentBid.bidAmount),
-              nonce: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map((b: any) => b.toString(16).padStart(2, '0')).join(''),
-              commitment: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map((b: any) => b.toString(16).padStart(2, '0')).join('')
-            } : undefined,
-            isParticipant: apiState.hasSubmittedBid,
-            canSubmitBid: apiState.canSubmitBid,
-            canRevealBid: apiState.canRevealBid
-          });
+          
+          if (!apiState || !apiState.publicState) {
+            console.error('Invalid API state received:', apiState);
+            return;
+          }
+          
+          try {
+            // Convert API state to UI state format
+            const newAuctionState = {
+              auction: {
+                productName: apiState.publicState.productName || 'Unknown Product',
+                productDescription: apiState.publicState.productDescription || 'No description',
+                minimumBidValue: Number(apiState.publicState.minimumBidValue || 0),
+                auctioneerPublicKey: Array.from(apiState.publicState.auctioneerPublicKey || new Uint8Array()).map((b: any) => b.toString(16).padStart(2, '0')).join(''),
+                currentRound: apiState.publicState.currentPhase === 'bidding' ? AuctionRound.BIDDING : 
+                             apiState.publicState.currentPhase === 'revealing' ? AuctionRound.REVEALING : AuctionRound.FINISHED,
+                totalBids: Number(apiState.publicState.totalBids || 0),
+                revealedBids: (apiState.publicState.revealedBids || []).map((bid: any) => ({
+                  participantId: bid.participantId || 'unknown',
+                  bidAmount: Number(bid.bidAmount || 0),
+                  timestamp: Number(bid.timestamp || 0)
+                }))
+              },
+              currentUserBid: apiState.myCurrentBid ? {
+                bidAmount: Number(apiState.myCurrentBid.bidAmount || 0),
+                nonce: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map((b: any) => b.toString(16).padStart(2, '0')).join(''),
+                commitment: Array.from(apiState.myCurrentBid.commitment || new Uint8Array()).map((b: any) => b.toString(16).padStart(2, '0')).join('')
+              } : undefined,
+              isParticipant: Boolean(apiState.hasSubmittedBid),
+              canSubmitBid: Boolean(apiState.canSubmitBid),
+              canRevealBid: Boolean(apiState.canRevealBid)
+            };
+            
+            console.log('Setting new auction state:', newAuctionState);
+            setAuctionState(newAuctionState);
+          } catch (error) {
+            console.error('Error processing API state:', error);
+          }
         },
         error: (err: any) => {
           console.error('Error in auction state stream:', err);
+        },
+        complete: () => {
+          console.log('Auction state stream completed');
         }
       });
 
-      return () => subscription.unsubscribe();
+      // Add timeout to detect if subscription is not working
+      setTimeout(() => {
+        if (!auctionState) {
+          console.warn('Auction state subscription timeout - no data received after 3 seconds');
+          console.log('Current subscription:', subscription);
+          
+          // Try to create fallback state if still no data
+          if (!auctionState) {
+            console.log('Creating fallback auction state due to timeout');
+            const fallbackState = {
+              auction: {
+                productName: 'Auction Contract (Timeout)',
+                productDescription: 'Connected to auction contract but no state data received',
+                minimumBidValue: 1000,
+                auctioneerPublicKey: 'connected',
+                currentRound: AuctionRound.BIDDING,
+                totalBids: 0,
+                revealedBids: []
+              },
+              currentUserBid: undefined,
+              isParticipant: true,
+              canSubmitBid: true,
+              canRevealBid: false
+            };
+            setAuctionState(fallbackState);
+          }
+        }
+      }, 3000);
+
+      return () => {
+        console.log('Cleaning up auction state subscription');
+        subscription.unsubscribe();
+      };
     } else if (!auctionState && !currentDeployment) {
       // No deployment available yet, this is normal when first loading
       console.log('No auction deployment available yet, waiting for deployment or join');
     }
-  }, [currentDeployment, auctionState]);
+  }, [currentDeployment]); // Remove auctionState from dependencies to prevent infinite loops
 
   // Auctioneer functions
   const startBiddingPhase = useCallback(async () => {

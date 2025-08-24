@@ -84,7 +84,7 @@ function AuctionApp() {
     );
   }
 
-  console.log('auctionState', auctionState);
+  console.log('********* auctionState', auctionState);
 
   return (
             <MainLayout

@@ -68,13 +68,13 @@ export function apiRevealedBidToUI(apiBid: APIRevealedBid): RevealedBid {
  */
 export function apiPublicStateToUIData(apiState: APIPublicState): AuctionData {
   return {
-    productName: apiState.productName,
-    productDescription: apiState.productDescription,
-    minimumBidValue: Number(apiState.minimumBidValue), // Convert bigint to number
-    auctioneerPublicKey: Array.from(apiState.auctioneerPublicKey).map((b: any) => b.toString(16).padStart(2, '0')).join(''),
-    currentRound: apiPhaseToUIRound(apiState.currentPhase as any),
-    totalBids: Number(apiState.totalBids), // Convert bigint to number
-    revealedBids: apiState.revealedBids.map(apiRevealedBidToUI),
+    productName: apiState?.productName,
+    productDescription: apiState?.productDescription,
+    minimumBidValue: Number(apiState?.minimumBidValue), // Convert bigint to number
+    auctioneerPublicKey: Array.from(apiState?.auctioneerPublicKey || []).map((b: any) => b.toString(16).padStart(2, '0')).join(''),
+    currentRound: apiPhaseToUIRound(apiState?.currentPhase as any),
+    totalBids: Number(apiState?.totalBids), // Convert bigint to number
+    revealedBids: apiState?.revealedBids.map(apiRevealedBidToUI),
   };
 }
 
