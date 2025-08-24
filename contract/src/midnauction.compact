@@ -1,6 +1,6 @@
 pragma language_version 0.17;
 import CompactStandardLibrary;
-//import "./node_modules/@openzeppelin-compact/contracts/src/access/AccessControl" prefix AccessControl_;
+import "openzeppelin-contracts/access/Ownable" prefix Ownable_;
 
 export enum PHASE { commitment, revealing, finished };
 
@@ -23,7 +23,6 @@ constructor(
     productDescription_: Opaque<"string">,
     //rounds_: Uint<64>,
     auctioneerPK_: Bytes<32>,
-    
 ) {
     productName = disclose(productName_);
     productDescription = disclose(productDescription_);
@@ -34,6 +33,7 @@ constructor(
     lastRoundSecretBids.resetToDefault();// = default<Set<[Bytes<32>, Bytes<32>]>>;
     lastRoundRevealedBids.resetToDefault();// = default<Set<Bytes<32>>>;
     phase = PHASE.commitment;
+    Ownable_initialize(left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()));
 }
 
 export circuit commitSecretBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>): []{
@@ -44,7 +44,7 @@ export circuit commitSecretBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: By
 }
 
 export circuit moveToRevealPhase(): [] {
-    // assertOnlyOwner
+    Ownable_assertOnlyOwner();
     assert(phase == PHASE.commitment, "Wrong phase to do that");
     phase = PHASE.revealing;
 }
@@ -58,7 +58,7 @@ export circuit revealBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32
 }
 
 //export circuit moveToNextPhase(): [] {
-    // assertOnlyOwner
+    // Ownable_assertOnlyOwner();
     //assert(phase == PHASE.revealing, "Wrong phase to do that");
 //}
 
