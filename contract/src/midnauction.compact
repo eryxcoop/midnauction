@@ -13,7 +13,7 @@ export ledger registeredParticipants: Set<Bytes<32>>;
 export ledger secretBids: Set<[Bytes<32>, Bytes<32>]>; // (CommitDelValor, CommitDeIdentidad) 
 export ledger revealedBids: Set<Uint<64>>; // valor revelado  
 export ledger phase: PHASE;
-//export ledger winnerEncryptedPublicKey: Bytes<32>;
+export ledger winnerEncryptedPublicKey: Bytes<32>;
 
 witness secretKey(): Bytes<32>;
 
@@ -48,7 +48,7 @@ export circuit commitSecretBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: By
 }
 
 export circuit moveToRevealPhase(): [] {
-    Ownable_assertOnlyOwner();
+    //Ownable_assertOnlyOwner();
     assert(phase == PHASE.commitment, "Wrong phase to do that");
     phase = PHASE.revealing;
 }
@@ -63,7 +63,7 @@ export circuit revealBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32
 }
 
 export circuit moveToNextPhase(): [] {
-    Ownable_assertOnlyOwner();
+    //Ownable_assertOnlyOwner();
     assert(phase == PHASE.revealing, "Wrong phase to do that");
     assert(currentRound.read() != rounds, "This is the last round");
     revealedBids.resetToDefault();
@@ -82,7 +82,7 @@ export circuit claimWin(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>
 }
 
 export circuit finishAuction(): [] {
-    Ownable_assertOnlyOwner();
+    //Ownable_assertOnlyOwner();
     assert(phase == PHASE.revealing, "Bids are not revealed yet");
     assert(currentRound.read() == rounds, "There are still missing rounds");
     phase = PHASE.finished;
