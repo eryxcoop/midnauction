@@ -22,7 +22,7 @@ constructor(
     productDescription_: Opaque<"string">,
     rounds_: Uint<64>,
     auctioneerPK_: Bytes<32>,
-    // auctioneerZswapAddress_: ZswapCoinPublicKey,
+    auctioneerZswapAddress_: ZswapCoinPublicKey,
 ) {
     productName = disclose(productName_);
     productDescription = disclose(productDescription_);
@@ -33,7 +33,7 @@ constructor(
     secretBids.resetToDefault();// = default<Set<[Bytes<32>, Bytes<32>]>>;
     revealedBids.resetToDefault();
     phase = PHASE.commitment;
-    // Ownable_initialize(left<ZswapCoinPublicKey, ContractAddress>(auctioneerZswapAddress_));
+    Ownable_initialize(left<ZswapCoinPublicKey, ContractAddress>(auctioneerZswapAddress_));
 }
 
 export circuit commitSecretBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>): []{
