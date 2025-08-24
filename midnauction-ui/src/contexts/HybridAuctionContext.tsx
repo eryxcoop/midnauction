@@ -314,35 +314,6 @@ export const HybridAuctionProvider: React.FC<PropsWithChildren> = ({ children })
         }
       });
 
-      // Add timeout to detect if subscription is not working
-      setTimeout(() => {
-        if (!auctionState) {
-          console.warn('Auction state subscription timeout - no data received after 3 seconds');
-          console.log('Current subscription:', subscription);
-          
-          // Try to create fallback state if still no data
-          if (!auctionState) {
-            console.log('Creating fallback auction state due to timeout');
-            const fallbackState = {
-              auction: {
-                productName: 'Auction Contract (Timeout)',
-                productDescription: 'Connected to auction contract but no state data received',
-                minimumBidValue: 1000,
-                auctioneerPublicKey: 'connected',
-                currentRound: AuctionRound.BIDDING,
-                totalBids: 0,
-                revealedBids: []
-              },
-              currentUserBid: undefined,
-              isParticipant: true,
-              canSubmitBid: true,
-              canRevealBid: false
-            };
-            setAuctionState(fallbackState);
-          }
-        }
-      }, 3000);
-
       return () => {
         console.log('Cleaning up auction state subscription');
         subscription.unsubscribe();
