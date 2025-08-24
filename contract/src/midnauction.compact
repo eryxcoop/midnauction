@@ -25,11 +25,11 @@ constructor(
     auctioneerPK_: Bytes<32>,
     
 ) {
-    productName = productName_;
-    productDescription = productDescription_;
+    productName = disclose(productName_);
+    productDescription = disclose(productDescription_);
     //rounds = rounds_;
     //currentRound = 1;
-    auctioneerPK = auctioneerPK_;
+    auctioneerPK = disclose(auctioneerPK_);
     //registeredParticipants = default<Set<Bytes<32>>>;
     lastRoundSecretBids.resetToDefault();// = default<Set<[Bytes<32>, Bytes<32>]>>;
     lastRoundRevealedBids.resetToDefault();// = default<Set<Bytes<32>>>;
@@ -38,9 +38,9 @@ constructor(
 
 export circuit commitSecretBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>): []{
     assert(phase == PHASE.commitment, "Wrong phase to do that");
-    const bidCommit = persistentCommit(value, bidNonce);
-    const identityCommit = persistentCommit(secretKey(), idNonce);
-    lastRoundSecretBids.push([bidCommit, identityCommit]);
+    const bidCommit = persistentCommit<Uint<64>>(value, bidNonce);
+    const identityCommit = persistentCommit<Bytes<32>>(secretKey(), idNonce);
+    lastRoundSecretBids.insert(disclose([bidCommit, identityCommit]));
 }
 
 export circuit moveToRevealPhase(): [] {
@@ -51,10 +51,10 @@ export circuit moveToRevealPhase(): [] {
 
 export circuit revealBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>): [] {
     assert(phase == PHASE.revealing, "Wrong phase to do that");
-    const bidCommit = persistentCommit(value, bidNonce);
-    const identityCommit = persistentCommit(secretKey(), idNonce);
-    assert(lastRoundSecretBids.member([bidCommit, identityCommit]), "That bid is a lie");
-    lastRoundRevealedBids.push(value);
+    const bidCommit = persistentCommit<Uint<64>>(value, bidNonce);
+    const identityCommit = persistentCommit<Bytes<32>>(secretKey(), idNonce);
+    assert(lastRoundSecretBids.member(disclose([bidCommit, identityCommit])), "That bid is a lie");
+    lastRoundRevealedBids.insert(disclose(value));
 }
 
 //export circuit moveToNextPhase(): [] {
@@ -63,15 +63,8 @@ export circuit revealBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32
 //}
 
 export circuit claimWin(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>, encryptedPublicKey: Bytes<32>): [] {
-    const bidCommit = persistentCommit(value, bidNonce);
-    const identityCommit = persistentCommit(secretKey(), idNonce);
-    assert(lastRoundSecretBids.member([bidCommit, identityCommit]), "That bid is a lie");
-    const maxValue = 0;
-    for (const bid of lastRoundRevealedBids) {
-        if (bid > maxValue) {
-            maxValue = bid;
-        }
-    } 
-    assert(maxValue == value, "You didn't actually win");
-    winnerEncryptedPublicKey = encryptedPublicKey;
+    const bidCommit = persistentCommit<Uint<64>>(value, bidNonce);
+    const identityCommit = persistentCommit<Bytes<32>>(secretKey(), idNonce);
+    assert(lastRoundSecretBids.member(disclose([bidCommit, identityCommit])), "That bid is a lie");
+    winnerEncryptedPublicKey = disclose(encryptedPublicKey);
 }
