@@ -12,15 +12,15 @@ import { WitnessContext } from "@midnight-ntwrk/compact-runtime";
  */
 
 export type MidnauctionPrivateState = {
-  readonly secretKey: Uint8Array;
+  readonly secretKey: Uint8Array<any>;
 };
 
-export const createMidauctionPrivateState = (secretKey: Uint8Array) => ({
+export const createMidnauctionPrivateState = (secretKey: Uint8Array<any>) => ({
   secretKey,
 });
 
 export const witnesses = {
   secretKey: ({ privateState }: WitnessContext<Ledger, MidnauctionPrivateState>)
   : 
-  [ MidnauctionPrivateState, Uint8Array, ] => [privateState, privateState.secretKey],
+  [ MidnauctionPrivateState, Uint8Array<any>, ] => [privateState, privateState.secretKey],
 };
