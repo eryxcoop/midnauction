@@ -1,5 +1,28 @@
 # Midnauction - Team Eryx raccoons
 
+## Installation
+```bash
+cd contracts
+```
+
+```bash
+npm run compact
+```
+
+```bash
+npm run build
+```
+
+```bash
+cd ../midnauction-ui
+```
+
+```bash
+npm run build:start
+```
+
+You must use a browser with Lace wallet and have the Midnight's Proving Server on 
+
 ## Summary
 
 After analyzing the possibilities offered by Midnight and the machinery already built, we concluded that it is an ideal environment for the development of private auctions.
