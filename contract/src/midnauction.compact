@@ -1,6 +1,6 @@
 pragma language_version 0.17;
 import CompactStandardLibrary;
-import "openzeppelin-contracts/access/Ownable" prefix Ownable_;
+//import "openzeppelin-contracts/access/Ownable" prefix Ownable_;
 
 export enum PHASE { commitment, revealing, finished };
 
@@ -13,7 +13,7 @@ export ledger registeredParticipants: Set<Bytes<32>>;
 export ledger secretBids: Set<[Bytes<32>, Bytes<32>]>; // (CommitDelValor, CommitDeIdentidad) 
 export ledger revealedBids: Set<Uint<64>>; // valor revelado  
 export ledger phase: PHASE;
-export ledger winnerEncryptedPublicKey: Bytes<32>;
+//export ledger winnerEncryptedPublicKey: Bytes<32>;
 
 witness secretKey(): Bytes<32>;
 
@@ -22,7 +22,7 @@ constructor(
     productDescription_: Opaque<"string">,
     rounds_: Uint<64>,
     auctioneerPK_: Bytes<32>,
-    auctioneerZswapAddress_: ZswapCoinPublicKey,
+    //auctioneerZswapAddress_: ZswapCoinPublicKey,
 ) {
     productName = disclose(productName_);
     productDescription = disclose(productDescription_);
@@ -33,7 +33,7 @@ constructor(
     secretBids.resetToDefault();// = default<Set<[Bytes<32>, Bytes<32>]>>;
     revealedBids.resetToDefault();
     phase = PHASE.commitment;
-    Ownable_initialize(left<ZswapCoinPublicKey, ContractAddress>(auctioneerZswapAddress_));
+    //Ownable_initialize(left<ZswapCoinPublicKey, ContractAddress>(auctioneerZswapAddress_));
 }
 
 export circuit commitSecretBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>): []{
