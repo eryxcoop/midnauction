@@ -2,7 +2,7 @@
 
 import { Ledger } from "./managed/midnauction/contract/index.cjs";
 import { WitnessContext } from "@midnight-ntwrk/compact-runtime";
-import type { AuctionBid } from "../../auction-api/src/common-types";
+// import { AuctionBid } from "../../auction-api/src/common-types";
 
 /* **********************************************************************
  * The only hidden state needed by the bulletin board contract is
@@ -13,7 +13,7 @@ import type { AuctionBid } from "../../auction-api/src/common-types";
  */
 export type MidnauctionPrivateState = {
   readonly participantSecretKey: Uint8Array;
-  readonly myBids: AuctionBid[];
+  readonly myBids: any[];
   nonces: Map<string, Uint8Array>;
 };
 
