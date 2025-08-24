@@ -2,53 +2,28 @@
  * Provides types and utilities for working with Midnauction auction contracts.
  */
 
+
 import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
 import { type Logger } from 'pino';
 import {
   type DeployedAuctionContract,
+  type AuctionContract,
   type AuctionDerivedState,
   type AuctionProviders,
   AuctionPhase,
   type AuctionPrivateState,
+  auctionPrivateStateKey
 } from './common-types.js';
 import * as utils from './utils/index.js';
-// TODO: Re-enable when actual contract is ready
-// import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
+
+import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { combineLatest, from, type Observable, tap } from 'rxjs';
+import { MidnauctionPrivateState, createMidauctionPrivateState, witnesses } from '../../contract/src/index';
 
-// TODO: This will be replaced with the actual contract module once the contract is compiled
-// For now, we'll create a mock contract structure (commented out as not currently used)
-// const mockContractModule = {
-//   Contract: class MockContract {
-//     constructor(public witnesses: any) {}
-//     
-//     impureCircuits = {
-//       createAuction: async (productName: string, _productDescription: string, minimumBid: bigint) => {
-//         console.log(`Creating auction: ${productName}, min bid: ${minimumBid}`);
-//       },
-//       submitBid: async (bidAmount: bigint, _commitment: Uint8Array) => {
-//         console.log(`Submitting bid: ${bidAmount}`);
-//       },
-//       closeBidding: async () => {
-//         console.log('Closing bidding phase');
-//       },
-//       startRevealing: async () => {
-//         console.log('Starting revealing phase');
-//       },
-//       revealBid: async (bidAmount: bigint, _nonce: Uint8Array) => {
-//         console.log(`Revealing bid: ${bidAmount}`);
-//       },
-//       finishAuction: async () => {
-//         console.log('Finishing auction');
-//       },
-//     };
-//   },
-//   ledger: (data: any) => data, // Mock ledger function
-// };
+import contractModule from '../../contract/dist/managed/midnauction/contract/index.cjs';
+const { Contract, ledger } = contractModule;
 
-// TODO: These will be replaced with actual contract instances
-// const mockWitnesses = {}; // TODO: Replace with actual witnesses
-// const auctionContractInstance: AuctionContract = new mockContractModule.Contract(mockWitnesses) as any;
+const auctionContractInstance: AuctionContract = new Contract(witnesses);
 
 export interface DeployedAuctionAPI {
   readonly deployedContractAddress: ContractAddress;
@@ -285,33 +260,12 @@ export class AuctionAPI implements DeployedAuctionAPI {
   static async deploy(providers: AuctionProviders, logger?: Logger): Promise<AuctionAPI> {
     logger?.info('Deploying auction contract');
 
-    // TODO: Replace with actual deployContract call once contract is ready
-    // For now, return a mock deployed contract
-    const mockDeployedContract = {
-      deployTxData: {
-        public: {
-          contractAddress: 'mock-contract-address',
-          txHash: 'mock-tx-hash',
-          blockHeight: 0,
-        }
-      },
-      callTx: {
-        createAuction: async () => ({ public: { txHash: 'mock-hash', blockHeight: 0 } }),
-        submitBid: async () => ({ public: { txHash: 'mock-hash', blockHeight: 0 } }),
-        closeBidding: async () => ({ public: { txHash: 'mock-hash', blockHeight: 0 } }),
-        startRevealing: async () => ({ public: { txHash: 'mock-hash', blockHeight: 0 } }),
-        revealBid: async () => ({ public: { txHash: 'mock-hash', blockHeight: 0 } }),
-        finishAuction: async () => ({ public: { txHash: 'mock-hash', blockHeight: 0 } }),
-      }
-    };
+    const initialPrivateState = await AuctionAPI.getPrivateState(providers)
+    const deployedAuctionContract: DeployedAuctionContract = await deployContract(
+      providers, auctionPrivateStateKey, initialPrivateState, auctionContractInstance
+    );
 
-    logger?.trace({
-      contractDeployed: {
-        finalizedDeployTxData: mockDeployedContract.deployTxData.public,
-      },
-    });
-
-    return new AuctionAPI(mockDeployedContract as any, providers, logger);
+    return new AuctionAPI(deployedAuctionContract, providers, logger);
   }
 
   /**
@@ -359,15 +313,10 @@ export class AuctionAPI implements DeployedAuctionAPI {
     return new AuctionAPI(mockDeployedContract as any, providers, logger);
   }
 
-  // TODO: Re-enable when actual contract is ready
-  // private static async getPrivateState(_providers: AuctionProviders): Promise<AuctionPrivateState> {
-  //   // TODO: Replace with actual private state retrieval
-  //   return {
-  //     participantSecretKey: utils.randomBytes(32),
-  //     myBids: [],
-  //     nonces: new Map(),
-  //   };
-  // }
+  private static async getPrivateState(providers: AuctionProviders): Promise<AuctionPrivateState> {
+    const existingPrivateState = await providers.privateStateProvider.get(auctionPrivateStateKey);
+    return existingPrivateState ?? createMidauctionPrivateState(utils.randomBytes(32));
+  }
 }
 
 /**

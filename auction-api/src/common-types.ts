@@ -1,6 +1,9 @@
 // Midnauction auction common types and abstractions.
 
 import { type MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
+import {Contract, Witnesses} from '../../contract/src/index';
+import {StateWithZswap} from '@midnight-ntwrk/compact-runtime';
+
 
 // TODO: These types will need to be imported from the actual contract once it's created
 // For now, we'll define placeholder types based on the auction system requirements
@@ -59,17 +62,7 @@ export type PrivateStates = {
 /**
  * Represents an auction contract and its private state.
  */
-export type AuctionContract = {
-  // TODO: This will be replaced with the actual contract type from the compiled contract
-  readonly impureCircuits: {
-    readonly createAuction: (productName: string, productDescription: string, minimumBid: bigint) => Promise<void>;
-    readonly submitBid: (bidAmount: bigint, commitment: Uint8Array) => Promise<void>;
-    readonly closeBidding: () => Promise<void>;
-    readonly startRevealing: () => Promise<void>;
-    readonly revealBid: (bidAmount: bigint, nonce: Uint8Array) => Promise<void>;
-    readonly finishAuction: () => Promise<void>;
-  };
-};
+export type AuctionContract = Contract<StateWithZswap<AuctionPrivateState>, Witnesses<StateWithZswap<AuctionPrivateState>>>;
 
 /**
  * The keys of the circuits exported from {@link AuctionContract}.

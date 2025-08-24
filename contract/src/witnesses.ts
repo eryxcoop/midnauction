@@ -12,11 +12,16 @@ import { WitnessContext } from "@midnight-ntwrk/compact-runtime";
  */
 
 export type MidnauctionPrivateState = {
-  readonly secretKey: Uint8Array;
+  readonly participantSecretKey: Uint8Array;
+
+
+  nonces: new Map(),
 };
 
 export const createMidauctionPrivateState = (secretKey: Uint8Array) => ({
-  secretKey,
+  participantSecretKey: secretKey,
+  myBids: [],
+  nonces: new Map(),
 });
 
 export const witnesses = {
