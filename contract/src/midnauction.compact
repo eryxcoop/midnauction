@@ -33,7 +33,7 @@ constructor(
     lastRoundSecretBids.resetToDefault();// = default<Set<[Bytes<32>, Bytes<32>]>>;
     lastRoundRevealedBids.resetToDefault();// = default<Set<Bytes<32>>>;
     phase = PHASE.commitment;
-    Ownable_initialize(left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()));
+    //Ownable_initialize(left<ZswapCoinPublicKey, ContractAddress>(auctioneerPK));
 }
 
 export circuit commitSecretBid(value: Uint<64>, bidNonce: Bytes<32>, idNonce: Bytes<32>): []{
