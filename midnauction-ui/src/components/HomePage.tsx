@@ -27,7 +27,7 @@ export function HomePage() {
                 Join as Participant
               </Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
-                Participate in existing auctions by submitting private bids and revealing them when the time comes.
+                Participate in existing auctions by submitting private bids and revealing them afterwards.
               </Typography>
               <Button
                 variant="contained"
