@@ -7,3 +7,4 @@ export * from './JoinParticipantPage';
 export * from './JoinAuctioneerPage';
 export * from './AuctionPage';
 export * from './AuctioneerPanel';
+export * from './AuctionGame';

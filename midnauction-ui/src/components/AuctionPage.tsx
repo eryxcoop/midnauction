@@ -3,7 +3,7 @@ import { useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, Box, Fab, Chip } from '@mui/material';
 import { Refresh, ArrowBack } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { AuctionProvider, useAuction } from '../contexts';
+import { HybridAuctionProvider, useHybridAuction } from '../contexts/HybridAuctionContext';
 import { MainLayout, AuctionInfo, BidForm } from './';
 import { AuctioneerPanel } from './AuctioneerPanel';
 import { theme } from '../config/theme';
@@ -21,7 +21,7 @@ function AuctionApp() {
     refreshAuctionData,
     loading, 
     error 
-  } = useAuction();
+  } = useHybridAuction();
 
       // If there are auction data in the state (from creation), use them
   const auctionData = location.state?.auctionData;
@@ -146,9 +146,9 @@ export function AuctionPage() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AuctionProvider>
+      <HybridAuctionProvider>
         <AuctionApp />
-      </AuctionProvider>
+      </HybridAuctionProvider>
     </ThemeProvider>
   );
 }

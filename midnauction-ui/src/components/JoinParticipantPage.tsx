@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuction } from '../contexts';
+import { useHybridAuction } from '../contexts/HybridAuctionContext';
 import {
   Container,
   Box,
@@ -20,12 +20,9 @@ import {
 
 export function JoinParticipantPage() {
   const navigate = useNavigate();
-  const { joinExistingAuction, loading: contextLoading, error: contextError } = useAuction();
+  const { joinExistingAuction, loading, error } = useHybridAuction();
   const [contractAddress, setContractAddress] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
-  
-  const loading = contextLoading;
-  const error = contextError || localError;
 
   const handleJoinAuction = async () => {
     if (!contractAddress.trim()) {
@@ -42,13 +39,13 @@ export function JoinParticipantPage() {
     setLocalError(null);
 
     try {
-      // Join existing auction using the API
-      await joinExistingAuction(contractAddress);
+      // Join existing auction using the hybrid context (which uses real providers)
+      await joinExistingAuction(contractAddress, 'participant');
       
-      // Redirect to auction screen as participant
+      // Navigate to auction page as participant
       navigate(`/auction/${contractAddress}?role=participant`);
     } catch (err) {
-      setLocalError(`Could not connect to the auction: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setLocalError(err instanceof Error ? err.message : 'Error joining auction');
     }
   };
 
@@ -82,9 +79,9 @@ export function JoinParticipantPage() {
 
       <Card>
         <CardContent sx={{ p: 4 }}>
-          {error && (
+          {(error || localError) && (
             <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
+              {error || localError}
             </Alert>
           )}
 

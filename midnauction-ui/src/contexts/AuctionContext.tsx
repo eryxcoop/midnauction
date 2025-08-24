@@ -79,14 +79,11 @@ export function AuctionProvider({ children, providers }: AuctionProviderProps) {
   
   // API management functions
   const deployNewAuction = async (productName: string, productDescription: string, minimumBid: number): Promise<void> => {
-    if (!providers) {
-      throw new Error('Providers not available for auction deployment');
-    }
-
     setLoading(true);
     setError(null);
     try {
-      const api = await AuctionAPI.deploy(providers);
+      // Use providers if available, otherwise the API will use internal mocks
+      const api = await AuctionAPI.deploy(providers || {} as any);
       await api.createAuction(productName, productDescription, dollarsToCents(minimumBid));
       setAuctionAPI(api);
       setIsConnected(true);
@@ -99,14 +96,11 @@ export function AuctionProvider({ children, providers }: AuctionProviderProps) {
   };
 
   const joinExistingAuction = async (contractAddress: string): Promise<void> => {
-    if (!providers) {
-      throw new Error('Providers not available for joining auction');
-    }
-
     setLoading(true);
     setError(null);
     try {
-      const api = await AuctionAPI.join(providers, contractAddress as any);
+      // Use providers if available, otherwise the API will use internal mocks
+      const api = await AuctionAPI.join(providers || {} as any, contractAddress as any);
       setAuctionAPI(api);
       setIsConnected(true);
     } catch (err) {

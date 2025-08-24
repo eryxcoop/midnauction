@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuction } from '../contexts';
+import { useHybridAuction } from '../contexts/HybridAuctionContext';
 import {
   Container,
   Box,
@@ -24,11 +24,8 @@ import {
 
 export function CreateAuctionPage() {
   const navigate = useNavigate();
-  const { deployNewAuction, loading: contextLoading, error: contextError } = useAuction();
+  const { deployNewAuction, loading, error } = useHybridAuction();
   const [localError, setLocalError] = useState<string | null>(null);
-  
-  const loading = contextLoading;
-  const error = contextError || localError;
   const [formData, setFormData] = useState({
     productName: '',
     productDescription: '',
@@ -57,7 +54,7 @@ export function CreateAuctionPage() {
     setLocalError(null);
 
     try {
-      // Deploy new auction using the API
+      // Deploy new auction using the hybrid context (which uses real providers)
       await deployNewAuction(
         formData.productName,
         formData.productDescription,
@@ -67,10 +64,10 @@ export function CreateAuctionPage() {
       // Generate a mock contract address for navigation
       const contractAddress = `0x${Math.random().toString(16).substring(2, 42)}`;
       
-      // Redirect to auction screen as auctioneer
+      // Navigate to auction page as auctioneer
       navigate(`/auction/${contractAddress}?role=auctioneer`);
     } catch (err) {
-      setLocalError(`Error creating the auction: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setLocalError(err instanceof Error ? err.message : 'Error creating auction');
     }
   };
 
@@ -113,9 +110,9 @@ export function CreateAuctionPage() {
 
       <Card>
         <CardContent sx={{ p: 4 }}>
-          {error && (
+          {(error || localError) && (
             <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
+              {error || localError}
             </Alert>
           )}
 

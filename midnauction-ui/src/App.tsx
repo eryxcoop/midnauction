@@ -8,14 +8,14 @@ import {
   JoinAuctioneerPage, 
   AuctionPage 
 } from './components';
-import { AuctionProvider } from './contexts';
+import { HybridAuctionProvider } from './contexts/HybridAuctionContext';
 import { theme } from './config/theme';
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AuctionProvider>
+      <HybridAuctionProvider>
         <Router>
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -25,7 +25,7 @@ function App() {
             <Route path="/auction/:contractAddress" element={<AuctionPage />} />
           </Routes>
         </Router>
-      </AuctionProvider>
+      </HybridAuctionProvider>
     </ThemeProvider>
   );
 }

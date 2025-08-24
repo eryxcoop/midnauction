@@ -1,6 +1,6 @@
 // Midnauction auction common types and abstractions.
 
-// TODO: Import actual types when contract is ready
+import { type MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
 
 // TODO: These types will need to be imported from the actual contract once it's created
 // For now, we'll define placeholder types based on the auction system requirements
@@ -79,7 +79,7 @@ export type AuctionCircuitKeys = Exclude<keyof AuctionContract['impureCircuits']
 /**
  * The providers required by {@link AuctionContract}.
  */
-export type AuctionProviders = any; // TODO: Fix when actual contract types are available
+export type AuctionProviders = MidnightProviders<AuctionCircuitKeys, PrivateStates>;
 
 /**
  * A {@link AuctionContract} that has been deployed to the network.
